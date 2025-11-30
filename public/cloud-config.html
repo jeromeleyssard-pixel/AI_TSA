@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TSA Assistant - Configuration Cloud</title>
+  <link rel="stylesheet" href="/chat.css">
+  <style>
+    .config-container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .provider-section {
+      border: 2px solid #dde8ff;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+      background: #f8faff;
+    }
+    .provider-section.active {
+      border-color: #0069d9;
+      background: #e6f3ff;
+    }
+    .provider-title {
+      font-size: 1.2rem;
+      font-weight: bold;
+      margin-bottom: 10px;
+      color: #0069d9;
+    }
+    .input-group {
+      margin: 15px 0;
+    }
+    .input-group label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    .input-group input, .input-group select {
+      width: 100%;
+      padding: 10px;
+      border: 2px solid #dde8ff;
+      border-radius: 6px;
+      font-size: 1rem;
+    }
+    .status-message {
+      padding: 15px;
+      border-radius: 8px;
+      margin: 20px 0;
+      font-weight: bold;
+    }
+    .status-success {
+      background: #d4edda;
+      color: #155724;
+      border: 2px solid #c3e6cb;
+    }
+    .status-error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 2px solid #f5c6cb;
+    }
+    .status-warning {
+      background: #fff3cd;
+      color: #856404;
+      border: 2px solid #ffeaa7;
+    }
+    .test-button {
+      background: #28a745;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 1rem;
+      margin: 10px 0;
+    }
+    .test-button:hover {
+      background: #218838;
+    }
+    .test-button:disabled {
+      background: #6c757d;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+<body>
+  <div class="config-container">
+    <h1>Configuration Cloud TSA Assistant</h1>
+    <p>Cette page permet de configurer l'assistant pour utiliser des services cloud (fonctionne sur mobile et desktop).</p>
+
+    <div id="status-message" class="status-message" style="display: none;"></div>
+
+    <!-- OpenAI Configuration -->
+    <div class="provider-section" id="openai-section">
+      <div class="provider-title">🤖 OpenAI (Recommandé)</div>
+      <p>Utilise OpenAI GPT-4o-mini - rapide, économique et fonctionne partout.</p>
+      
+      <div class="input-group">
+        <label for="openai-api-key">Clé API OpenAI:</label>
+        <input type="password" id="openai-api-key" placeholder="sk-...">
+        <small>Obtenez votre clé sur <a href="https://platform.openai.com/api-keys" target="_blank">platform.openai.com</a></small>
+      </div>
+      
+      <div class="input-group">
+        <label for="openai-model">Modèle:</label>
+        <select id="openai-model">
+          <option value="gpt-4o-mini">GPT-4o-mini (recommandé)</option>
+          <option value="gpt-4o">GPT-4o (plus puissant)</option>
+          <option value="gpt-3.5-turbo">GPT-3.5-turbo (économique)</option>
+        </select>
+      </div>
+      
+      <button class="test-button" onclick="testProvider('openai')">Tester OpenAI</button>
+    </div>
+
+    <!-- Anthropic Configuration -->
+    <div class="provider-section" id="anthropic-section">
+      <div class="provider-title">🧠 Anthropic Claude</div>
+      <p>Utilise Claude 3 Haiku - excellent pour les conversations empathiques.</p>
+      
+      <div class="input-group">
+        <label for="anthropic-api-key">Clé API Anthropic:</label>
+        <input type="password" id="anthropic-api-key" placeholder="sk-ant-...">
+        <small>Obtenez votre clé sur <a href="https://console.anthropic.com/" target="_blank">console.anthropic.com</a></small>
+      </div>
+      
+      <div class="input-group">
+        <label for="anthropic-model">Modèle:</label>
+        <select id="anthropic-model">
+          <option value="claude-3-haiku-20240307">Claude 3 Haiku (recommandé)</option>
+          <option value="claude-3-sonnet-20240229">Claude 3 Sonnet</option>
+        </select>
+      </div>
+      
+      <button class="test-button" onclick="testProvider('anthropic')">Tester Anthropic</button>
+    </div>
+
+    <!-- Local Ollama Fallback -->
+    <div class="provider-section" id="ollama-section">
+      <div class="provider-title">🏠 Ollama Local (Fallback)</div>
+      <p>Utilise Ollama installé localement - desktop uniquement, gratuit et privé.</p>
+      
+      <div class="input-group">
+        <label for="ollama-enabled">
+          <input type="checkbox" id="ollama-enabled"> Activer Ollama local
+        </label>
+      </div>
+      
+      <div class="input-group">
+        <label for="ollama-model">Modèle:</label>
+        <input type="text" id="ollama-model" value="mistral" placeholder="mistral">
+      </div>
+      
+      <div class="input-group">
+        <label for="ollama-url">URL Ollama:</label>
+        <input type="text" id="ollama-url" value="http://localhost:11434" placeholder="http://localhost:11434">
+      </div>
+      
+      <button class="test-button" onclick="testProvider('ollama')">Tester Ollama</button>
+    </div>
+
+    <div style="margin-top: 30px;">
+      <button class="primary" style="font-size: 1.2rem; padding: 15px 30px;" onclick="saveConfiguration()">Sauvegarder la configuration</button>
+      <p style="margin-top: 15px;">
+        <a href="/" style="color: #0069d9;">← Retour au chat</a>
+      </p>
+    </div>
+  </div>
+
+  <script>
+    async function testProvider(provider) {
+      const statusEl = document.getElementById('status-message');
+      const button = event.target;
+      
+      button.disabled = true;
+      button.textContent = 'Test en cours...';
+      
+      try {
+        let response;
+        
+        if (provider === 'openai') {
+          const apiKey = document.getElementById('openai-api-key').value;
+          const model = document.getElementById('openai-model').value;
+          
+          if (!apiKey) {
+            throw new Error('Veuillez entrer une clé API OpenAI');
+          }
+          
+          response = await fetch('/test-cloud', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ provider: 'openai', apiKey, model })
+          });
+          
+        } else if (provider === 'anthropic') {
+          const apiKey = document.getElementById('anthropic-api-key').value;
+          const model = document.getElementById('anthropic-model').value;
+          
+          if (!apiKey) {
+            throw new Error('Veuillez entrer une clé API Anthropic');
+          }
+          
+          response = await fetch('/test-cloud', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ provider: 'anthropic', apiKey, model })
+          });
+          
+        } else if (provider === 'ollama') {
+          const enabled = document.getElementById('ollama-enabled').checked;
+          const model = document.getElementById('ollama-model').value;
+          const url = document.getElementById('ollama-url').value;
+          
+          if (!enabled) {
+            throw new Error('Veuillez activer Ollama');
+          }
+          
+          response = await fetch('/test-ollama', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify { model, url }
+          });
+        }
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          statusEl.className = 'status-message status-success';
+          statusEl.textContent = `✅ ${provider} fonctionne parfaitement ! ${result.message || ''}`;
+          document.getElementById(`${provider}-section`).classList.add('active');
+        } else {
+          throw new Error(result.error || 'Test échoué');
+        }
+        
+      } catch (error) {
+        statusEl.className = 'status-message status-error';
+        statusEl.textContent = `❌ Erreur ${provider}: ${error.message}`;
+        document.getElementById(`${provider}-section`).classList.remove('active');
+      }
+      
+      statusEl.style.display = 'block';
+      button.disabled = false;
+      button.textContent = `Tester ${provider.charAt(0).toUpperCase() + provider.slice(1)}`;
+    }
+    
+    async function saveConfiguration() {
+      const statusEl = document.getElementById('status-message');
+      
+      try {
+        const config = {
+          openai: {
+            apiKey: document.getElementById('openai-api-key').value,
+            model: document.getElementById('openai-model').value
+          },
+          anthropic: {
+            apiKey: document.getElementById('anthropic-api-key').value,
+            model: document.getElementById('anthropic-model').value
+          },
+          ollama: {
+            enabled: document.getElementById('ollama-enabled').checked,
+            model: document.getElementById('ollama-model').value,
+            url: document.getElementById('ollama-url').value
+          }
+        };
+        
+        const response = await fetch('/save-cloud-config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(config)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          statusEl.className = 'status-message status-success';
+          statusEl.textContent = '✅ Configuration sauvegardée ! Redémarrage de l\'application...';
+          
+          setTimeout(() => {
+            window.location.href = '/';
+          }, 2000);
+        } else {
+          throw new Error(result.error || 'Sauvegarde échouée');
+        }
+        
+      } catch (error) {
+        statusEl.className = 'status-message status-error';
+        statusEl.textContent = `❌ Erreur de sauvegarde: ${error.message}`;
+      }
+      
+      statusEl.style.display = 'block';
+    }
+    
+    // Charger la configuration existante
+    async function loadConfiguration() {
+      try {
+        const response = await fetch('/get-cloud-config');
+        const config = await response.json();
+        
+        if (config.openai) {
+          document.getElementById('openai-api-key').value = config.openai.apiKey || '';
+          document.getElementById('openai-model').value = config.openai.model || 'gpt-4o-mini';
+        }
+        
+        if (config.anthropic) {
+          document.getElementById('anthropic-api-key').value = config.anthropic.apiKey || '';
+          document.getElementById('anthropic-model').value = config.anthropic.model || 'claude-3-haiku-20240307';
+        }
+        
+        if (config.ollama) {
+          document.getElementById('ollama-enabled').checked = config.ollama.enabled || false;
+          document.getElementById('ollama-model').value = config.ollama.model || 'mistral';
+          document.getElementById('ollama-url').value = config.ollama.url || 'http://localhost:11434';
+        }
+        
+      } catch (error) {
+        console.warn('Impossible de charger la configuration:', error);
+      }
+    }
+    
+    // Charger au démarrage
+    loadConfiguration();
+  </script>
+</body>
+</html>

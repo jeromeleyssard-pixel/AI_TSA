@@ -32,36 +32,97 @@ Fournir une interface simple et adaptative pour aider au quotidien les personnes
 - **Sensibilité aux stimulations** : adaptation environnementale
 - **Préférences de format** : longueur, style de présentation
 
-## 🚀 Installation
+## 🌐 Version Cloud (Mobile/Desktop)
 
-### Prérequis
-- Node.js (v18 ou supérieur)
-- Ollama (optionnel, pour LLM local)
+La version cloud permet d'utiliser l'application sur **tous les appareils** (smartphone, tablette, desktop) avec des APIs externes.
 
-### Installation rapide
+### ⚡ Installation rapide (Cloud)
+
 ```bash
-# Cloner le repository
+# Cloner et installer
 git clone https://github.com/jeromeleyssard-pixel/AI_TSA.git
 cd AI_TSA
-
-# Installer les dépendances
+git checkout cloud-version
 npm install
 
-# Démarrer l'application
+# Configurer une API (OpenAI recommandé)
+# 1. Allez sur https://platform.openai.com/api-keys
+# 2. Créez une clé API
+# 3. Démarrez l'application:
 npm start
+# 4. Ouvrez http://localhost:3000/cloud-config
+# 5. Entrez votre clé et testez
 ```
 
-### Configuration Ollama (optionnel)
+### 🔑 Fournisseurs supportés
+
+#### 🤖 **OpenAI (Recommandé)**
+- **Modèle** : GPT-4o-mini (rapide, économique)
+- **Coût** : ~$0.15 pour 1000 conversations
+- **Avantages** : Fonctionne partout, rapide, fiable
+- **Inconvénients** : Payant
+
+#### 🧠 **Anthropic Claude**
+- **Modèle** : Claude 3 Haiku (empathique)
+- **Coût** : ~$0.25 pour 1000 conversations  
+- **Avantages** : Excellent pour l'émotionnel
+- **Inconvénients** : Payant
+
+#### 🏠 **Ollama Local (Fallback)**
+- **Modèle** : Mistral (gratuit)
+- **Coût** : Gratuit
+- **Avantages** : 100% privé, gratuit
+- **Inconvénients** : Desktop uniquement
+
+### 📱 Portabilité
+
+| Fonctionnalité | Local (Ollama) | Cloud (OpenAI/Anthropic) |
+|----------------|----------------|---------------------------|
+| **Desktop** | ✅ | ✅ |
+| **Smartphone** | ❌ | ✅ |
+| **Tablette** | ❌ | ✅ |
+| **Coût** | Gratuit | Payant (~$0.15/1000 msgs) |
+| **Confidentialité** | 100% locale | API externe |
+| **Vitesse** | Moyenne | Rapide |
+
+### 🚀 Déploiement Cloud
+
+#### Option 1: **Développement local**
 ```bash
-# Installer Ollama
-curl -fsSL https://ollama.ai/install.sh | sh
+npm start
+# Ouvrir http://localhost:3000
+```
 
-# Télécharger Mistral
-ollama pull mistral
+#### Option 2: **Vercel (Recommandé)**
+```bash
+# Installer Vercel CLI
+npm i -g vercel
 
-# Activer dans l'application
-export OLLAMA_ENABLED=true
-export OLLAMA_MODEL=mistral
+# Déployer
+vercel
+```
+
+#### Option 3: **Railway/Render**
+```bash
+# Connecter repository
+# Déployer automatiquement
+```
+
+### 🔧 Configuration avancée
+
+Pour la production, utilisez des variables d'environnement:
+
+```bash
+# OpenAI
+export OPENAI_API_KEY="sk-your-key"
+export OPENAI_MODEL="gpt-4o-mini"
+
+# Anthropic  
+export ANTHROPIC_API_KEY="sk-ant-your-key"
+export ANTHROPIC_MODEL="claude-3-haiku-20240307"
+
+# Port
+export PORT=3000
 ```
 
 ## 📱 Portabilité

@@ -1,12 +1,25 @@
 const express = require('express');
-const bodyParser = require('body-parser');
-const fs = require('fs');
 const path = require('path');
+const fs = require('fs');
 const Ajv = require('ajv');
 const addFormats = require('ajv-formats');
-
+const bodyParser = require('body-parser');
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Configuration du cloud
+const CLOUD_ENABLED = process.env.OPENAI_API_KEY || process.env.ANTHROPIC_API_KEY;
+let cloudLLMService = null;
+
+if (CLOUD_ENABLED) {
+  try {
+    const CloudLLMService = require('./src/cloud_llm');
+    cloudLLMService = new CloudLLMService();
+    console.log('[CLOUD] LLM service initialized with', cloudLLMService.provider);
+  } catch (error) {
+    console.warn('[CLOUD] Failed to initialize cloud LLM:', error.message);
+  }
+}
 
 // Optional local LLM (Ollama) configuration
 const OLLAMA_ENABLED = process.env.OLLAMA_ENABLED === 'true';
@@ -493,22 +506,43 @@ app.post('/ask', async (req, res) => {
     contextualPrompt += `\nMessage actuel de l'utilisateur: ${userMessage}\nRéponds de manière similaire aux exemples, en adaptant au profil TSA/TDAH et en texte simple et direct.`;
     return contextualPrompt;
   }
+  // Appel LLM : priorité au cloud, fallback sur Ollama local
   if (
-    OLLAMA_ENABLED &&
-    OLLAMA_MODEL &&
     message &&
     mode !== 'surcharge' &&
     mode !== 'planification' &&
     !isGreetingMsg &&
     !isChoice123
   ) {
-    // Construire un prompt avec des exemples et le profil pour guider Mistral
-    const contextualPrompt = buildContextualPrompt(prompt, message, profile);
-    llmReply = await callOllamaChat(contextualPrompt, message, profile, mode, phase);
-    // Vérifier la validité de la réponse LLM
-    if (llmReply && !isLlmReplyValid(llmReply, message)) {
-      console.warn('[OLLAMA] Réponse invalide ou trop générique, fallback sur heuristiques');
-      llmReply = null;
+    // 1) Essayer le cloud LLM d'abord
+    if (CLOUD_ENABLED && cloudLLMService) {
+      try {
+        llmReply = await cloudLLMService.callLLM(prompt, message, profile, mode, phase);
+        if (llmReply && !cloudLLMService.validateReply(llmReply, message)) {
+          console.warn('[CLOUD] Réponse invalide, fallback sur autre méthode');
+          llmReply = null;
+        } else if (llmReply) {
+          console.log('[CLOUD] Réponse générée par', cloudLLMService.provider);
+        }
+      } catch (error) {
+        console.warn('[CLOUD] Erreur appel LLM:', error.message);
+        llmReply = null;
+      }
+    }
+    
+    // 2) Fallback sur Ollama local si cloud échoue
+    if (!llmReply && OLLAMA_ENABLED && OLLAMA_MODEL) {
+      try {
+        const contextualPrompt = buildContextualPrompt(prompt, message, profile);
+        llmReply = await callOllamaChat(contextualPrompt, message, profile, mode, phase);
+        if (llmReply && !isLlmReplyValid(llmReply, message)) {
+          console.warn('[OLLAMA] Réponse invalide, fallback sur heuristiques');
+          llmReply = null;
+        }
+      } catch (error) {
+        console.warn('[OLLAMA] Erreur appel Ollama:', error.message);
+        llmReply = null;
+      }
     }
   }
 
@@ -845,6 +879,119 @@ app.post('/examples', (req, res) => {
   } catch (e) {
     console.error('Failed to add example', e);
     res.status(500).json({ error: 'add_failed' });
+  }
+});
+
+// Configuration cloud endpoints
+app.get('/cloud-config', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'cloud-config.html'));
+});
+
+app.get('/get-cloud-config', (req, res) => {
+  res.json({
+    openai: {
+      apiKey: process.env.OPENAI_API_KEY ? '***' : '',
+      model: process.env.OPENAI_MODEL || 'gpt-4o-mini'
+    },
+    anthropic: {
+      apiKey: process.env.ANTHROPIC_API_KEY ? '***' : '',
+      model: process.env.ANTHROPIC_MODEL || 'claude-3-haiku-20240307'
+    },
+    ollama: {
+      enabled: process.env.OLLAMA_ENABLED === 'true',
+      model: process.env.OLLAMA_MODEL || 'mistral',
+      url: process.env.OLLAMA_URL || 'http://localhost:11434'
+    }
+  });
+});
+
+app.post('/test-cloud', async (req, res) => {
+  const { provider, apiKey, model } = req.body;
+  
+  try {
+    if (provider === 'openai') {
+      const OpenAI = require('openai');
+      const openai = new OpenAI({ apiKey });
+      
+      const completion = await openai.chat.completions.create({
+        model: model || 'gpt-4o-mini',
+        messages: [
+          { role: 'user', content: 'Bonjour, réponds simplement "OK OpenAI fonctionne"' }
+        ],
+        max_tokens: 10
+      });
+      
+      const reply = completion.choices[0]?.message?.content;
+      if (reply && reply.includes('OK')) {
+        res.json({ success: true, message: 'Connecté et fonctionnel' });
+      } else {
+        res.json({ success: false, error: 'Réponse inattendue' });
+      }
+      
+    } else if (provider === 'anthropic') {
+      const Anthropic = require('@anthropic-ai/sdk');
+      const anthropic = new Anthropic({ apiKey });
+      
+      const message = await anthropic.messages.create({
+        model: model || 'claude-3-haiku-20240307',
+        max_tokens: 10,
+        messages: [
+          { role: 'user', content: 'Bonjour, réponds simplement "OK Anthropic fonctionne"' }
+        ]
+      });
+      
+      const reply = message.content[0]?.text;
+      if (reply && reply.includes('OK')) {
+        res.json({ success: true, message: 'Connecté et fonctionnel' });
+      } else {
+        res.json({ success: false, error: 'Réponse inattendue' });
+      }
+    }
+    
+  } catch (error) {
+    res.json({ success: false, error: error.message });
+  }
+});
+
+app.post('/save-cloud-config', async (req, res) => {
+  // Note: En production, les clés API devraient être chiffrées
+  // Pour le développement, on utilise les variables d'environnement
+  
+  try {
+    const { openai, anthropic, ollama } = req.body;
+    
+    // Mettre à jour les variables d'environnement (pour cette session)
+    if (openai?.apiKey) {
+      process.env.OPENAI_API_KEY = openai.apiKey;
+      process.env.OPENAI_MODEL = openai.model || 'gpt-4o-mini';
+    }
+    
+    if (anthropic?.apiKey) {
+      process.env.ANTHROPIC_API_KEY = anthropic.apiKey;
+      process.env.ANTHROPIC_MODEL = anthropic.model || 'claude-3-haiku-20240307';
+    }
+    
+    if (ollama) {
+      process.env.OLLAMA_ENABLED = ollama.enabled ? 'true' : 'false';
+      process.env.OLLAMA_MODEL = ollama.model || 'mistral';
+      process.env.OLLAMA_URL = ollama.url || 'http://localhost:11434';
+    }
+    
+    // Réinitialiser le service cloud avec nouvelles clés
+    if (process.env.OPENAI_API_KEY || process.env.ANTHROPIC_API_KEY) {
+      try {
+        const CloudLLMService = require('./src/cloud_llm');
+        cloudLLMService = new CloudLLMService();
+        console.log('[CLOUD] Service rechargé avec nouvelle configuration');
+      } catch (error) {
+        console.warn('[CLOUD] Erreur rechargement:', error.message);
+      }
+    }
+    
+    res.json({ success: true, message: 'Configuration sauvegardée' });
+    
+  } catch (error) {
+    res.json({ success: false, error: error.message });
   }
 });
 

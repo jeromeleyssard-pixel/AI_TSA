@@ -42,6 +42,14 @@
     });
   }
 
+  // Cloud config button
+  const cloudConfig = document.getElementById('cloudConfig');
+  if (cloudConfig) {
+    cloudConfig.addEventListener('click', () => {
+      window.location.href = '/cloud-config';
+    });
+  }
+
   function appendMessage(text, who){
     const d = document.createElement('div');
     d.className = 'msg ' + (who === 'user' ? 'user' : 'bot');
