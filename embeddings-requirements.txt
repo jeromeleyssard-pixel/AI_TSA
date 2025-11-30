@@ -1,0 +1,6 @@
+flask
+sentence-transformers
+numpy
+torch
+# Optional: faiss-cpu (faster nearest neighbor search) - install if available for your platform
+# faiss-cpu

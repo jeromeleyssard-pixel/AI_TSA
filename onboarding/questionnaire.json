@@ -1,0 +1,65 @@
+{
+  "title": "Questionnaire d'onboarding - TSA/TDAH",
+  "version": "1.0",
+  "questions": [
+    {
+      "id": "longueur_pref",
+      "text": "Quelle longueur de texte préfères‑tu ?",
+      "type": "single_choice",
+      "options": [
+        {"value": "tres_court", "label": "très court"},
+        {"value": "moyen", "label": "moyen"},
+        {"value": "detaille", "label": "détaillé"}
+      ]
+    },
+    {
+      "id": "format_pref",
+      "text": "Quelle forme préfères‑tu pour les réponses ?",
+      "type": "single_choice",
+      "options": [
+        {"value": "puces", "label": "listes à puces"},
+        {"value": "etapes", "label": "étapes numérotées"},
+        {"value": "mini_texte", "label": "mini texte continu"}
+      ]
+    },
+    {
+      "id": "difficultes_principales",
+      "text": "Quels sont tes principaux blocages ? (choisis jusqu'à 3)",
+      "type": "multi_choice",
+      "options": ["se mettre au travail", "finir les tâches", "gérer le temps", "comprendre les consignes", "supporter le bruit", "les imprévus", "interactions sociales", "autre"]
+    },
+    {
+      "id": "sensibilite_stimulations",
+      "text": "Comment réagis‑tu aux stimulations (bruit, notifications, changements) ?",
+      "type": "single_choice",
+      "options": [
+        {"value": "faible", "label": "faible"},
+        {"value": "moyenne", "label": "moyenne"},
+        {"value": "elevee", "label": "élevée"}
+      ]
+    },
+    {
+      "id": "besoin_validation",
+      "text": "As‑tu besoin de validation émotionnelle fréquente ?",
+      "type": "single_choice",
+      "options": [
+        {"value": "souvent", "label": "oui souvent"},
+        {"value": "parfois", "label": "parfois"},
+        {"value": "non", "label": "non"}
+      ]
+    },
+    {
+      "id": "usages_frequents",
+      "text": "Pour quels usages utilises‑tu cet assistant ?",
+      "type": "multi_choice",
+      "options": [
+        {"value": "organisation", "label": "organisation"},
+        {"value": "etudes", "label": "études"},
+        {"value": "travail", "label": "travail"},
+        {"value": "vie_quotidienne", "label": "vie quotidienne"},
+        {"value": "communication", "label": "communication"},
+        {"value": "gestion_emotions", "label": "gestion émotions"}
+      ]
+    }
+  ]
+}

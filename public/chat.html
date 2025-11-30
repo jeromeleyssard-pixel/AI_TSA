@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>TSA Assistant — Chat</title>
+    <link rel="stylesheet" href="/chat.css">
+    <script src="/chat.js" defer></script>
+</head>
+<body>
+  <main>
+    <h1>TSA Assistant — Chat simplifié</h1>
+    <p id="note">Interface simple — format court par défaut. <button id="editProfile">Éditer profil</button></p>
+
+    <div class="top-controls" role="region" aria-label="Contrôles du chat">
+      <div id="advancedControls" class="mode-row" aria-label="Modes d'assistance">
+        <span>Mode:</span>
+        <button id="mode_standard" class="mode-btn" data-mode="standard">Standard</button>
+        <button id="mode_surcharge" class="mode-btn" data-mode="surcharge">Surcharge</button>
+        <button id="mode_planif" class="mode-btn" data-mode="planification">Planification</button>
+        <label for="verbosity" class="verbosity-label">Longueur :</label>
+        <select id="verbosity" aria-label="Longueur de réponse">
+          <option value="short">Court</option>
+          <option value="long">Long</option>
+        </select>
+      </div>
+      <div style="margin-top:6px">
+        <label><input type="checkbox" id="toggleAdvanced"> Afficher les contrôles avancés</label>
+      </div>
+    </div>
+
+    <section id="chat" aria-live="polite" aria-atomic="false"></section>
+
+    <form id="form" aria-label="Envoyer un message">
+      <textarea id="input" rows="3" placeholder="Écris ton message... (Entrée pour envoyer, Shift+Entrée pour saut de ligne)" aria-label="Message"></textarea>
+      <div class="controls">
+        <button type="submit" class="primary">Envoyer</button>
+      </div>
+    </form>
+  </main>
+  
+</body>
+</html>

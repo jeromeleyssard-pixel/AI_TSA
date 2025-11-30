@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>TSA Assistant — Admin</title>
+  <link rel="stylesheet" href="/admin.css">
+  <script src="/admin.js" defer></script>
+</head>
+<body>
+  <main>
+    <h1>Admin — Exemples & Feedback</h1>
+    <p>Utilisez cette page pour gérer les exemples extraits des retours utilisateurs, reconstruire l'index et forcer le rechargement des embeddings.</p>
+    <div class="controls">
+      <button id="btnRefresh">Rafraîchir</button>
+      <button id="btnRebuild">Rebuild examples (server)</button>
+      <button id="btnReindex">Reindex embeddings (embeddings service)</button>
+      <a href="/chat.html" class="link">Ouvrir le chat</a>
+    </div>
+
+    <section class="pane">
+      <h2>Exemples positifs</h2>
+      <div id="examplesList" class="list"></div>
+      <div class="manual-add">
+        <h3>Ajouter manuellement un exemple</h3>
+        <textarea id="newMsg" placeholder="Message d'utilisateur..."></textarea>
+        <textarea id="newReply" placeholder="Réponse..."></textarea>
+        <button id="btnAddExample">Ajouter</button>
+      </div>
+    </section>
+
+    <section class="pane">
+      <h2>Feedback utilisateur</h2>
+      <div id="feedbackList" class="list"></div>
+    </section>
+  </main>
+</body>
+</html>

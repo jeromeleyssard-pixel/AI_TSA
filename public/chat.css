@@ -1,0 +1,124 @@
+body{font-family:Segoe UI, Roboto, Arial, sans-serif;margin:12px;background:#f7f7fb;color:#111}
+main{max-width:820px;margin:0 auto;background:#fff;padding:18px;border-radius:10px;box-shadow:0 3px 12px rgba(0,0,0,0.06)}
+h1{font-size:1.2rem;margin-bottom:8px}
+#chat{min-height:240px;border:2px solid #e6eefc;padding:12px;border-radius:8px;background:#fcfcff;overflow:auto}
+.msg{margin:10px 0;padding:10px;border-radius:8px;line-height:1.4}
+.msg.user{background:#e6f0ff;text-align:right}
+.msg.bot{background:#f6f7fb;text-align:left}
+#chat .msg, .msg { white-space: pre-wrap; }
+
+.examples-block{background:#eef6ff;border-left:4px solid #9ec5ff;padding:8px;border-radius:6px;margin-bottom:8px;font-size:0.95rem}
+.examples-block .ex-item{margin-bottom:6px;padding-bottom:6px;border-bottom:1px dashed #dbeafe}
+.examples-block .ex-item:last-child{border-bottom:none}
+
+/* Feedback buttons (thumbs) — make them subtle and spaced */
+.fb-btn{
+	background: transparent;
+	border: 1px solid #cfe0ff;
+	color: #0b4da2;
+	padding: 6px 10px;
+	border-radius: 8px;
+	margin-right: 8px;
+	font-size: 1.05rem;
+	line-height: 1;
+	cursor: pointer;
+}
+.fb-btn:hover{ background: #f4fbff; }
+.fb-btn:disabled{ opacity: 0.55; cursor: default; }
+
+/* Examples toggle */
+.ex-toggle{ display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:8px }
+.ex-toggle button{ background: transparent; border: none; color: #0b66b2; cursor: pointer; padding:6px 8px; border-radius:6px }
+.ex-toggle button:hover{ background:#eef7ff }
+#form{margin-top:12px;display:flex;flex-direction:column}
+#input{width:100%;padding:12px;border:2px solid #dde8ff;border-radius:8px;font-size:1rem;font-family:inherit;background:#fff;color:#333;resize:vertical;min-height:80px}
+#input:focus{border-color:#0069d9;outline:2px solid #9ec5ff;outline-offset:1px}
+.controls{display:flex;justify-content:flex-end;margin-top:8px}
+button{padding:10px 14px;background:#0069d9;color:#fff;border:none;border-radius:8px;font-weight:600}
+#note{font-size:0.9rem;color:#444}
+.top-controls{margin-bottom:12px;display:flex;flex-direction:column;gap:10px}
+.top-controls label{font-weight:500;color:#333}
+.top-controls input[type="checkbox"]{margin-right:6px;transform:scale(1.1)}
+.model-row{display:flex;gap:8px;align-items:center}
+.model-row input{flex:1;padding:8px;border-radius:8px;border:1px solid #ddd;background:#fff;color:#333}
+.small{padding:6px 8px;font-size:0.9rem}
+.mode-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.mode-row span{font-weight:500;color:#333;margin-right:4px}
+.mode-btn{padding:8px 14px;border-radius:8px;border:2px solid #cfe0ff;background:#fff;color:#333;font-weight:500;cursor:pointer;transition:all 0.2s ease}
+.mode-btn:hover{background:#f4fbff;border-color:#8bb9ff}
+.mode-btn.active{background:#0069d9;color:#fff;border-color:#0069d9}
+.verbosity-label{margin-left:8px;font-weight:500;color:#333}
+#verbosity{padding:6px 10px;border-radius:6px;border:2px solid #ddd;background:#fff;color:#333;font-weight:500;cursor:pointer}
+#verbosity:focus{border-color:#0069d9;outline:2px solid #9ec5ff;outline-offset:1px}
+.primary{background:#0069d9;color:#fff;border:none;border-radius:8px;padding:10px 16px;font-weight:600;cursor:pointer;transition:background 0.2s ease}
+.primary:hover{background:#0058b8}
+
+/* Accessibility: larger focus rings */
+button:focus, input:focus, textarea:focus, select:focus{outline:3px solid #9ec5ff;outline-offset:2px}
+
+/* Reduce motion */
+*{transition:none!important}
+
+/* Banner for Ollama installation */
+.banner{display:flex;justify-content:space-between;align-items:center;padding:10px;border-radius:8px;background:#fff4e5;border:1px solid #ffd69b}
+.banner-text{font-weight:600;color:#644200}
+.banner-actions{display:flex;gap:8px}
+
+/* Boutons d’actions rapides dans le chat */
+.actions-row{display:flex;flex-wrap:wrap;gap:10px 10px;margin-top:12px}
+.quick-action{margin:0 4px 4px 0;padding:6px 14px;font-size:0.9rem;border-radius:999px;background:#0058b8;border:1px solid #004a9b;box-shadow:0 1px 2px rgba(0,0,0,0.1)}
+.quick-action:hover{background:#006fe0}
+
+.category-selector{
+  margin-top: 8px;
+  padding: 12px;
+  border: 2px solid #ff7043;
+  border-radius: 8px;
+  background: #fff8f5;
+  box-shadow: 0 2px 8px rgba(255, 112, 67, 0.15);
+}
+
+.category-selector > div:first-child{
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #333;
+  margin-bottom: 10px;
+}
+
+.category-buttons-row{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.category-btn{
+  padding: 8px 12px !important;
+  border: 2px solid #ddd !important;
+  border-radius: 6px !important;
+  background: #fff !important;
+  color: #333 !important;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.category-btn:hover{
+  background: #f0f7ff !important;
+  border-color: #0069d9 !important;
+  color: #0069d9 !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 105, 217, 0.2);
+}
+
+/* Minuteur 5 minutes type time timer (chat) */
+.timer-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;z-index:2000}
+.timer-dialog{background:#fff;border-radius:16px;padding:14px 18px;max-width:300px;width:90%;box-shadow:0 6px 18px rgba(0,0,0,0.22);text-align:center;cursor:grab;user-select:none}
+.timer-dialog.dragging{cursor:grabbing;opacity:0.9}
+.timer-title{font-weight:600;margin-bottom:6px;font-size:0.95rem}
+.timer-sub{font-size:0.9rem;color:#444;margin-bottom:12px}
+.timer-circle{width:150px;height:150px;border-radius:50%;background:conic-gradient(#ff7043 0deg, #ff7043 360deg);display:flex;align-items:center;justify-content:center;margin:4px auto 10px auto;position:relative}
+.timer-circle-inner{width:118px;height:118px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-size:1.5rem;font-weight:600;color:#333}
+.timer-actions{display:flex;justify-content:center;gap:8px;margin-top:8px}
+.timer-cancel{background:#e0e0e0;color:#333;border-radius:999px;padding:6px 12px;font-size:0.85rem}
+.timer-cancel:hover{background:#d5d5d5}

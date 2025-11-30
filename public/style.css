@@ -1,0 +1,22 @@
+body{font-family:Segoe UI, Roboto, Arial, sans-serif;margin:20px;background:#f9f9f9;color:#111}
+main{max-width:780px;margin:0 auto;background:#fff;padding:20px;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,0.06)}
+h1{font-size:1.2rem;margin-bottom:6px}
+.q{margin:12px 0;padding:6px;border-left:3px solid #e6e6e6}
+label{font-weight:600;display:block;margin-bottom:6px}
+button{padding:8px 12px;background:#0069d9;color:#fff;border:none;border-radius:4px;cursor:pointer}
+button:active{transform:translateY(1px)}
+#result{margin-top:12px;color:green}
+.actions-row{display:flex;flex-wrap:wrap;gap:10px 10px;margin-top:12px}
+.quick-action{margin:0 4px 4px 0;padding:6px 14px;font-size:0.9rem;border-radius:999px;background:#0058b8;border:1px solid #004a9b;box-shadow:0 1px 2px rgba(0,0,0,0.1)}
+.quick-action:hover{background:#006fe0}
+
+/* Minuteur 5 minutes type time timer */
+.timer-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;z-index:2000}
+.timer-dialog{background:#fff;border-radius:16px;padding:18px 22px;max-width:340px;width:90%;box-shadow:0 6px 18px rgba(0,0,0,0.22);text-align:center}
+.timer-title{font-weight:600;margin-bottom:8px}
+.timer-sub{font-size:0.9rem;color:#444;margin-bottom:12px}
+.timer-circle{width:150px;height:150px;border-radius:50%;background:conic-gradient(#ff7043 0deg, #ff7043 360deg);display:flex;align-items:center;justify-content:center;margin:4px auto 10px auto;position:relative}
+.timer-circle-inner{width:118px;height:118px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-size:1.5rem;font-weight:600;color:#333}
+.timer-actions{display:flex;justify-content:center;gap:8px;margin-top:8px}
+.timer-cancel{background:#e0e0e0;color:#333;border-radius:999px;padding:6px 12px;font-size:0.85rem}
+.timer-cancel:hover{background:#d5d5d5}
