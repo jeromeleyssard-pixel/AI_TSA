@@ -1,49 +1,758 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>TSA Assistant — Chat</title>
-    <link rel="stylesheet" href="/chat.css">
-    <script src="/chat.js" defer></script>
-</head>
-<body>
-  <main>
-    <h1>TSA Assistant — Chat simplifié</h1>
-    <p id="note">Interface simple — format court par défaut. <button id="editProfile">Éditer profil</button> <button id="cloudConfig">Configuration Cloud</button></p>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TSA Assistant - Chat Intelligent</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --secondary: #8b5cf6;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --dark: #1f2937;
+            --light: #f3f4f6;
+        }
 
-    <div class="top-controls" role="region" aria-label="Contrôles du chat">
-      <div id="advancedControls" class="mode-row" aria-label="Modes d'assistance">
-        <span>Mode:</span>
-        <button id="mode_standard" class="mode-btn" data-mode="standard">Standard</button>
-        <button id="mode_surcharge" class="mode-btn" data-mode="surcharge">Surcharge</button>
-        <button id="mode_planif" class="mode-btn" data-mode="planification">Planification</button>
-        <label for="verbosity" class="verbosity-label">Longueur :</label>
-        <select id="verbosity" aria-label="Longueur de réponse">
-          <option value="short">Court</option>
-          <option value="long">Long</option>
-        </select>
-      </div>
-      <div style="margin-top:6px">
-        <label><input type="checkbox" id="toggleAdvanced"> Afficher les contrôles avancés</label>
-      </div>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        .chat-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .message {
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .user-message {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            border-radius: 18px 18px 4px 18px;
+        }
+
+        .assistant-message {
+            background: var(--light);
+            border: 1px solid #e5e7eb;
+            border-radius: 18px 18px 18px 4px;
+        }
+
+        .typing-indicator {
+            display: inline-flex;
+            align-items: center;
+            padding: 8px 12px;
+            background: var(--light);
+            border-radius: 18px;
+            margin: 10px 0;
+        }
+
+        .typing-indicator span {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--primary);
+            margin: 0 2px;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-indicator span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-indicator span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+            0%, 60%, 100% {
+                transform: translateY(0);
+            }
+            30% {
+                transform: translateY(-10px);
+            }
+        }
+
+        .action-button {
+            background: white;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+            border-radius: 12px;
+            padding: 8px 16px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 4px;
+        }
+
+        .action-button:hover {
+            background: var(--primary);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+
+        .feedback-button {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-size: 20px;
+            margin: 0 4px;
+            opacity: 0.6;
+            transition: opacity 0.3s ease;
+        }
+
+        .feedback-button:hover {
+            opacity: 1;
+        }
+
+        .feedback-button.thumbs-up {
+            color: var(--success);
+        }
+
+        .feedback-button.thumbs-down {
+            color: var(--danger);
+        }
+
+        .profile-badge {
+            background: linear-gradient(135deg, var(--secondary), var(--primary));
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .context-indicator {
+            background: var(--warning);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .input-container {
+            background: white;
+            border-radius: 25px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            padding: 4px;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-field {
+            flex: 1;
+            border: none;
+            outline: none;
+            padding: 12px 16px;
+            font-size: 16px;
+            background: transparent;
+        }
+
+        .send-button {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .send-button:hover:not(:disabled) {
+            transform: scale(1.1);
+        }
+
+        .send-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success);
+            display: inline-block;
+            margin-right: 8px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+            }
+        }
+
+        .quick-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 12px 0;
+            padding: 12px;
+            background: rgba(99, 102, 241, 0.05);
+            border-radius: 12px;
+            border: 1px solid rgba(99, 102, 241, 0.2);
+        }
+
+        .header-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .footer {
+            background: rgba(31, 41, 55, 0.05);
+            padding: 16px 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #6b7280;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        /* Responsive */
+        @media (max-width: 640px) {
+            .chat-container {
+                border-radius: 0;
+                height: 100vh;
+                margin: 0;
+            }
+            
+            .header-info {
+                padding: 12px 16px;
+            }
+            
+            .messages-container {
+                padding: 16px;
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+    <div class="chat-container w-full max-w-4xl h-[90vh] flex flex-col">
+        <!-- Header -->
+        <div class="header-info">
+            <div class="flex items-center space-x-3">
+                <div class="status-indicator"></div>
+                <h1 class="text-xl font-bold text-gray-800">TSA Assistant</h1>
+                <div id="profileBadge" class="profile-badge hidden">
+                    <span id="profileType">TSA</span>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2">
+                <button onclick="toggleSettings()" class="text-gray-600 hover:text-gray-800">
+                    <i class="fas fa-cog"></i>
+                </button>
+                <button onclick="clearChat()" class="text-gray-600 hover:text-gray-800">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Messages Container -->
+        <div id="messagesContainer" class="messages-container flex-1 overflow-y-auto p-6 space-y-4">
+            <div class="text-center text-gray-500 py-8">
+                <i class="fas fa-robot text-4xl mb-4 text-indigo-500"></i>
+                <p class="text-lg">Bonjour ! Je suis ton assistant TSA/TDAH.</p>
+                <p class="text-sm mt-2">Comment puis-je t'aider aujourd'hui ?</p>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div id="quickActions" class="quick-actions hidden">
+            <!-- Actions will be populated dynamically -->
+        </div>
+
+        <!-- Input -->
+        <div class="p-4 border-t border-gray-200">
+            <div class="input-container">
+                <input 
+                    type="text" 
+                    id="messageInput" 
+                    class="input-field" 
+                    placeholder="Écris ton message..."
+                    maxlength="500"
+                    onkeypress="handleKeyPress(event)"
+                >
+                <button 
+                    id="sendButton" 
+                    class="send-button" 
+                    onclick="sendMessage()"
+                    disabled
+                >
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+            <div class="flex justify-between items-center mt-2 px-2">
+                <span id="charCount" class="text-xs text-gray-500">0/500</span>
+                <div id="contextInfo" class="text-xs text-gray-500">
+                    <!-- Context info will be shown here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>
+                Créé par <strong>Jérôme Leyssard</strong> • 
+                Supervision scientifique : <strong>Dr. Laurie Centelles, PhD</strong> •
+                Merci aux projets open source : Ollama, Mistral AI, OpenAI, Anthropic
+            </p>
+        </div>
     </div>
 
-    <section id="chat" aria-live="polite" aria-atomic="false"></section>
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-md mx-4">
+            <h2 class="text-xl font-bold mb-4">Paramètres</h2>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Type de fonctionnement</label>
+                    <select id="typeFonctionnement" class="w-full p-2 border border-gray-300 rounded-lg">
+                        <option value="">Non spécifié</option>
+                        <option value="TSA">TSA</option>
+                        <option value="TDAH">TDAH</option>
+                        <option value="mixte">Mixte</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Sensibilité aux stimulations</label>
+                    <select id="sensibilite" class="w-full p-2 border border-gray-300 rounded-lg">
+                        <option value="">Non spécifié</option>
+                        <option value="faible">Faible</option>
+                        <option value="moyenne">Moyenne</option>
+                        <option value="elevee">Élevée</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Besoin de validation</label>
+                    <select id="besoinValidation" class="w-full p-2 border border-gray-300 rounded-lg">
+                        <option value="">Non spécifié</option>
+                        <option value="oui">Oui</option>
+                        <option value="non">Non</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Préférence de longueur</label>
+                    <select id="longueurPref" class="w-full p-2 border border-gray-300 rounded-lg">
+                        <option value="">Non spécifié</option>
+                        <option value="tres_court">Très court</option>
+                        <option value="moyen">Moyen</option>
+                        <option value="detaille">Détaillé</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="flex justify-end space-x-3 mt-6">
+                <button onclick="toggleSettings()" class="px-4 py-2 text-gray-600 hover:text-gray-800">
+                    Annuler
+                </button>
+                <button onclick="saveProfile()" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
+                    Sauvegarder
+                </button>
+            </div>
+        </div>
+    </div>
 
-    <form id="form" aria-label="Envoyer un message">
-      <textarea id="input" rows="3" placeholder="Écris ton message... (Entrée pour envoyer, Shift+Entrée pour saut de ligne)" aria-label="Message"></textarea>
-      <div class="controls">
-        <button type="submit" class="primary">Envoyer</button>
-      </div>
-    </form>
-    
-    <footer style="margin-top: 40px; padding: 20px; border-top: 2px solid #dde8ff; text-align: center; color: #666; font-size: 0.9rem; line-height: 1.4;">
-      <p><strong>Application gratuite créée par Jérôme Leyssard</strong> - <a href="mailto:jeromeley.apps@gmail.com">jeromeley.apps@gmail.com</a></p>
-      <p style="margin: 10px 0;">Merci aux projets open source : <a href="https://ollama.ai" target="_blank">Ollama</a> et <a href="https://mistral.ai" target="_blank">Mistral AI</a> pour leurs modèles exceptionnels</p>
-      <p><strong>Application créée sous la supervision de Laurie Centelles, PhD</strong><br>Docteure en Sciences de la Cognition</p>
-    </footer>
-  </main>
-  
+    <script>
+        // Global variables
+        let sessionId = null;
+        let isTyping = false;
+        let currentProfile = {};
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            loadProfile();
+            setupEventListeners();
+            checkServerHealth();
+        });
+
+        function setupEventListeners() {
+            const messageInput = document.getElementById('messageInput');
+            messageInput.addEventListener('input', updateCharCount);
+            messageInput.addEventListener('input', checkInputValidity);
+        }
+
+        function updateCharCount() {
+            const input = document.getElementById('messageInput');
+            const charCount = document.getElementById('charCount');
+            charCount.textContent = `${input.value.length}/500`;
+        }
+
+        function checkInputValidity() {
+            const input = document.getElementById('messageInput');
+            const sendButton = document.getElementById('sendButton');
+            sendButton.disabled = input.value.trim().length === 0 || isTyping;
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage();
+            }
+        }
+
+        async function checkServerHealth() {
+            try {
+                const response = await fetch('/health');
+                const health = await response.json();
+                
+                if (health.features.cloudLLM) {
+                    updateContextInfo('🤖 LLM Cloud actif');
+                } else {
+                    updateContextInfo('🧠 Intelligence locale');
+                }
+                
+                console.log('Server health:', health);
+            } catch (error) {
+                console.error('Health check failed:', error);
+                updateContextInfo('⚠️ Mode dégradé');
+            }
+        }
+
+        function updateContextInfo(message) {
+            const contextInfo = document.getElementById('contextInfo');
+            contextInfo.textContent = message;
+        }
+
+        async function loadProfile() {
+            try {
+                const response = await fetch('/profile');
+                currentProfile = await response.json();
+                
+                if (currentProfile.type_fonctionnement) {
+                    updateProfileBadge(currentProfile.type_fonctionnement);
+                    populateSettingsForm(currentProfile);
+                }
+            } catch (error) {
+                console.error('Failed to load profile:', error);
+            }
+        }
+
+        function updateProfileBadge(type) {
+            const badge = document.getElementById('profileBadge');
+            const typeSpan = document.getElementById('profileType');
+            
+            badge.classList.remove('hidden');
+            typeSpan.textContent = type.toUpperCase();
+        }
+
+        function populateSettingsForm(profile) {
+            document.getElementById('typeFonctionnement').value = profile.type_fonctionnement || '';
+            document.getElementById('sensibilite').value = profile.sensibilite_stimulations || '';
+            document.getElementById('besoinValidation').value = profile.besoin_validation || '';
+            document.getElementById('longueurPref').value = profile.longueur_pref || '';
+        }
+
+        function toggleSettings() {
+            const modal = document.getElementById('settingsModal');
+            modal.classList.toggle('hidden');
+        }
+
+        async function saveProfile() {
+            const profile = {
+                type_fonctionnement: document.getElementById('typeFonctionnement').value,
+                sensibilite_stimulations: document.getElementById('sensibilite').value,
+                besoin_validation: document.getElementById('besoinValidation').value,
+                longueur_pref: document.getElementById('longueurPref').value
+            };
+
+            try {
+                const response = await fetch('/profile', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(profile)
+                });
+
+                if (response.ok) {
+                    currentProfile = profile;
+                    if (profile.type_fonctionnement) {
+                        updateProfileBadge(profile.type_fonctionnement);
+                    }
+                    toggleSettings();
+                    showNotification('Profil sauvegardé !', 'success');
+                } else {
+                    showNotification('Erreur lors de la sauvegarde', 'error');
+                }
+            } catch (error) {
+                console.error('Failed to save profile:', error);
+                showNotification('Erreur de connexion', 'error');
+            }
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            
+            if (!message || isTyping) return;
+            
+            isTyping = true;
+            checkInputValidity();
+            
+            // Add user message
+            addMessage(message, 'user');
+            input.value = '';
+            updateCharCount();
+            
+            // Show typing indicator
+            showTypingIndicator();
+            
+            try {
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        sessionId: sessionId,
+                        mode: 'standard'
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+
+                const data = await response.json();
+                
+                // Update session ID
+                if (data.sessionId) {
+                    sessionId = data.sessionId;
+                }
+                
+                // Hide typing indicator
+                hideTypingIndicator();
+                
+                // Add assistant message
+                addMessage(data.reply, 'assistant', data);
+                
+                // Show quick actions
+                if (data.actions && data.actions.length > 0) {
+                    showQuickActions(data.actions);
+                }
+                
+                // Update context info
+                if (data.context) {
+                    updateContextFromData(data.context);
+                }
+                
+            } catch (error) {
+                console.error('Error sending message:', error);
+                hideTypingIndicator();
+                addMessage('Désolé, j\'ai eu un problème technique. Réessaye dans un instant.', 'assistant');
+            } finally {
+                isTyping = false;
+                checkInputValidity();
+            }
+        }
+
+        function addMessage(content, type, data = null) {
+            const container = document.getElementById('messagesContainer');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}-message p-4 max-w-xs lg:max-w-md`;
+            
+            const messageId = data ? data.messageId || Date.now().toString() : Date.now().toString();
+            
+            messageDiv.innerHTML = `
+                <div class="flex justify-between items-start mb-2">
+                    <span class="font-semibold text-sm">
+                        ${type === 'user' ? 'Toi' : 'Assistant'}
+                        ${data && data.context && data.context.emotionalState ? 
+                            `<span class="context-indicator ml-2">${data.context.emotionalState}</span>` 
+                            : ''}
+                    </span>
+                    ${type === 'assistant' ? `
+                        <div class="flex space-x-1">
+                            <button class="feedback-button thumbs-up" onclick="sendFeedback('${messageId}', true)">
+                                <i class="fas fa-thumbs-up"></i>
+                            </button>
+                            <button class="feedback-button thumbs-down" onclick="sendFeedback('${messageId}', false)">
+                                <i class="fas fa-thumbs-down"></i>
+                            </button>
+                        </div>
+                    ` : ''}
+                </div>
+                <div class="text-sm whitespace-pre-wrap">${content}</div>
+                ${type === 'assistant' && data ? `
+                    <div class="text-xs text-gray-500 mt-2">
+                        ${data.context ? `Session: ${data.context.messageCount || 1} messages` : ''}
+                    </div>
+                ` : ''}
+            `;
+            
+            messageDiv.setAttribute('data-message-id', messageId);
+            container.appendChild(messageDiv);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function showTypingIndicator() {
+            const container = document.getElementById('messagesContainer');
+            const indicator = document.createElement('div');
+            indicator.className = 'typing-indicator';
+            indicator.id = 'typingIndicator';
+            indicator.innerHTML = `
+                <span></span>
+                <span></span>
+                <span></span>
+            `;
+            container.appendChild(indicator);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function hideTypingIndicator() {
+            const indicator = document.getElementById('typingIndicator');
+            if (indicator) {
+                indicator.remove();
+            }
+        }
+
+        function showQuickActions(actions) {
+            const container = document.getElementById('quickActions');
+            container.innerHTML = '';
+            
+            actions.forEach(action => {
+                const button = document.createElement('button');
+                button.className = 'action-button';
+                button.textContent = action.label;
+                button.onclick = () => executeQuickAction(action);
+                container.appendChild(button);
+            });
+            
+            container.classList.remove('hidden');
+        }
+
+        function executeQuickAction(action) {
+            const input = document.getElementById('messageInput');
+            input.value = action.payload.message;
+            sendMessage();
+        }
+
+        function updateContextFromData(context) {
+            let info = '';
+            if (context.currentTopic) {
+                info += `📝 ${context.currentTopic}`;
+            }
+            if (context.emotionalState && context.emotionalState !== 'neutral') {
+                info += ` 😊 ${context.emotionalState}`;
+            }
+            if (info) {
+                updateContextInfo(info);
+            }
+        }
+
+        async function sendFeedback(messageId, helpful) {
+            try {
+                await fetch('/feedback', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        sessionId: sessionId,
+                        messageId: messageId,
+                        helpful: helpful
+                    })
+                });
+                
+                // Visual feedback
+                const messageDiv = document.querySelector(`[data-message-id="${messageId}"]`);
+                if (messageDiv) {
+                    const buttons = messageDiv.querySelectorAll('.feedback-button');
+                    buttons.forEach(btn => btn.style.opacity = '0.3');
+                    
+                    const selectedBtn = helpful ? 
+                        messageDiv.querySelector('.thumbs-up') : 
+                        messageDiv.querySelector('.thumbs-down');
+                    if (selectedBtn) {
+                        selectedBtn.style.opacity = '1';
+                    }
+                }
+                
+                showNotification(helpful ? 'Merci pour ton feedback !' : 'Merci, je vais m\'améliorer', 'info');
+            } catch (error) {
+                console.error('Error sending feedback:', error);
+            }
+        }
+
+        function clearChat() {
+            if (confirm('Es-tu sûr de vouloir effacer toute la conversation ?')) {
+                const container = document.getElementById('messagesContainer');
+                container.innerHTML = `
+                    <div class="text-center text-gray-500 py-8">
+                        <i class="fas fa-robot text-4xl mb-4 text-indigo-500"></i>
+                        <p class="text-lg">Conversation effacée.</p>
+                        <p class="text-sm mt-2">Comment puis-je t'aider maintenant ?</p>
+                    </div>
+                `;
+                
+                // Hide quick actions
+                document.getElementById('quickActions').classList.add('hidden');
+                
+                // Reset session
+                sessionId = null;
+                
+                showNotification('Conversation effacée', 'info');
+            }
+        }
+
+        function showNotification(message, type = 'info') {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 ${
+                type === 'success' ? 'bg-green-500' : 
+                type === 'error' ? 'bg-red-500' : 
+                'bg-blue-500'
+            } text-white`;
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            // Remove after 3 seconds
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        // Auto-focus input
+        document.getElementById('messageInput').focus();
+    </script>
 </body>
 </html>
