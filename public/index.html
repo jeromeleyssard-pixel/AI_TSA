@@ -3,28 +3,20 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>TSA Assistant — Accueil</title>
-  <link rel="stylesheet" href="/style.css">
+  <title>TSA Assistant — Chat</title>
+  <script>
+    // Redirection automatique vers le chat pour une expérience simple
+    window.location.href = "/chat.html";
+  </script>
+  <noscript>
+    <meta http-equiv="refresh" content="0; url=/chat.html">
+  </noscript>
 </head>
 <body>
-  <main>
-    <h1>TSA Assistant — Prototype</h1>
-    <p>Bienvenue — cet outil accompagne des personnes TSA/TDAH pour l'organisation, la planification et la gestion de la surcharge.</p>
-    <ul>
-      <li><a href="/onboarding">Démarrer l'onboarding (créer/éditer ton profil)</a></li>
-      <li><a href="/onboarding.html">Page d'onboarding (direct)</a></li>
-      <li><a href="/chat.html">Ouvrir le chat</a></li>
-      <li><a href="/onboarding/schema">Voir le schéma du questionnaire (JSON)</a></li>
-      <li><a href="/profile">Voir le profil actuel (JSON)</a></li>
-    </ul>
-    <p>API utiles :</p>
-    <ul>
-      <li><code>GET /profile</code> — récupérer le profil</li>
-      <li><code>PUT /profile</code> — remplacer le profil</li>
-      <li><code>POST /ask</code> — envoyer une question (body: { message, mode })</li>
-      <li><code>POST /onboarding/submit</code> — soumettre le questionnaire</li>
-    </ul>
-    <p style="margin-top:1rem;color:#666;font-size:0.9rem">Remarque : c'est un prototype local. Les données sont stockées dans <code>data/profile.json</code>.</p>
-  </main>
+  <div style="text-align: center; padding: 50px; font-family: Arial, sans-serif;">
+    <h1>TSA Assistant</h1>
+    <p>Redirection vers le chat...</p>
+    <p><a href="/chat.html">Cliquez ici si vous n'êtes pas redirigé</a></p>
+  </div>
 </body>
 </html>
