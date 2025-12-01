@@ -1,1 +1,88 @@
-﻿{"$schema": "http://json-schema.org/draft-07/schema#", "title": "Profile TSA/TDAH", "type": "object", "properties": {"type_fonctionnement": {"type": "string", "enum": ["TSA", "TDAH", "mixte", "non_spécifié", ""]}, "longueur_pref": {"type": "string", "enum": ["tres_court", "moyen", "detaille", "court", "long", ""]}, "format_pref": {"type": "string", "enum": ["puces", "etapes", "mini_texte", "bullets", "numbered", ""]}, "difficultes_principales": {"type": "array", "items": {"type": "string"}}, "sensibilite_stimulations": {"type": "string", "enum": ["faible", "moyenne", "elevee", "normale", ""]}, "besoin_validation": {"type": "string", "enum": ["souvent", "parfois", "non", "oui", "non", ""]}, "usages_frequents": {"type": "array", "items": {"type": "string"}}, "derniere_mise_a_jour": {"type": "string", "format": "date-time"}, "communication_style": {"type": "string"}, "preferredLength": {"type": "string"}, "emotionalSupport": {"type": "boolean"}, "sensitivityLevel": {"type": "string"}}, "required": []}
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Profile TSA/TDAH",
+  "type": "object",
+  "properties": {
+    "type_fonctionnement": {
+      "type": "string",
+      "enum": [
+        "TSA",
+        "TDAH",
+        "mixte",
+        "non-spécifié",
+        ""
+      ]
+    },
+    "longueur_pref": {
+      "type": "string",
+      "enum": [
+        "tres_court",
+        "moyen",
+        "detaille",
+        "court",
+        "long",
+        ""
+      ]
+    },
+    "format_pref": {
+      "type": "string",
+      "enum": [
+        "puces",
+        "etapes",
+        "mini_texte",
+        "bullets",
+        "numbered",
+        ""
+      ]
+    },
+    "difficultes_principales": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "sensibilite_stimulations": {
+      "type": "string",
+      "enum": [
+        "faible",
+        "moyenne",
+        "elevee",
+        "normale",
+        ""
+      ]
+    },
+    "besoin_validation": {
+      "type": "string",
+      "enum": [
+        "souvent",
+        "parfois",
+        "non",
+        "oui",
+        ""
+      ]
+    },
+    "usages_frequents": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "derniere_mise_a_jour": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "communication_style": {
+      "type": "string"
+    },
+    "preferredLength": {
+      "type": "string"
+    },
+    "emotionalSupport": {
+      "type": "boolean"
+    },
+    "sensitivityLevel": {
+      "type": "string"
+    }
+  },
+  "required": []
+}
