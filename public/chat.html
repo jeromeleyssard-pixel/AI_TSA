@@ -291,6 +291,18 @@
 
         <!-- Quick Actions -->
         <div id="quickActions" class="quick-actions hidden">
+            <!-- Timer 5 minutes - Toujours visible -->
+            <div id="timerContainer" class="timer-container" style="display: flex; align-items: center; gap: 8px; padding: 8px; background: linear-gradient(135deg, #10b981, #059669); border-radius: 8px; margin-bottom: 8px;">
+                <button id="timerButton" class="action-button" style="background: white; color: #10b981; border: none; padding: 6px 12px; border-radius: 6px; font-weight: 600; cursor: pointer;" onclick="toggleTimer()">
+                    ⏱️ 5 min
+                </button>
+                <div id="timerDisplay" style="color: white; font-weight: 600; font-size: 14px; display: none;">
+                    05:00
+                </div>
+                <div id="timerProgress" style="width: 100px; height: 4px; background: rgba(255,255,255,0.3); border-radius: 2px; display: none;">
+                    <div id="timerProgressBar" style="width: 100%; height: 100%; background: white; border-radius: 2px; transition: width 1s linear;"></div>
+                </div>
+            </div>
             <!-- Actions will be populated dynamically -->
         </div>
 
@@ -750,6 +762,120 @@
                 notification.remove();
             }, 3000);
         }
+
+        // Timer 5 minutes pour concentration TDAH/TSA
+        let timerInterval = null;
+        let timerSeconds = 300; // 5 minutes
+        let timerRunning = false;
+
+        function toggleTimer() {
+            if (timerRunning) {
+                stopTimer();
+            } else {
+                startTimer();
+            }
+        }
+
+        function startTimer() {
+            timerSeconds = 300; // Reset à 5 minutes
+            timerRunning = true;
+            
+            // Update UI
+            const button = document.getElementById('timerButton');
+            const display = document.getElementById('timerDisplay');
+            const progress = document.getElementById('timerProgress');
+            const progressBar = document.getElementById('timerProgressBar');
+            
+            button.textContent = '⏸️ Pause';
+            button.style.background = '#ef4444';
+            button.style.color = 'white';
+            display.style.display = 'block';
+            progress.style.display = 'block';
+            
+            updateTimerDisplay();
+            
+            // Démarrer le décompte
+            timerInterval = setInterval(() => {
+                timerSeconds--;
+                updateTimerDisplay();
+                
+                if (timerSeconds <= 0) {
+                    stopTimer();
+                    showTimerComplete();
+                }
+            }, 1000);
+            
+            showNotification('⏱️ Timer de 5 minutes démarré ! Concentre-toi', 'success');
+        }
+
+        function stopTimer() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+            
+            timerRunning = false;
+            
+            // Update UI
+            const button = document.getElementById('timerButton');
+            const display = document.getElementById('timerDisplay');
+            const progress = document.getElementById('timerProgress');
+            
+            button.textContent = '⏱️ 5 min';
+            button.style.background = 'white';
+            button.style.color = '#10b981';
+            display.style.display = 'none';
+            progress.style.display = 'none';
+        }
+
+        function updateTimerDisplay() {
+            const display = document.getElementById('timerDisplay');
+            const progressBar = document.getElementById('timerProgressBar');
+            
+            const minutes = Math.floor(timerSeconds / 60);
+            const seconds = timerSeconds % 60;
+            const timeString = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            
+            display.textContent = timeString;
+            
+            // Progress bar
+            const progress = ((300 - timerSeconds) / 300) * 100;
+            progressBar.style.width = `${100 - progress}%`;
+            
+            // Changement de couleur selon le temps restant
+            const container = document.getElementById('timerContainer');
+            if (timerSeconds <= 60) {
+                container.style.background = 'linear-gradient(135deg, #ef4444, #dc2626)'; // Rouge
+            } else if (timerSeconds <= 120) {
+                container.style.background = 'linear-gradient(135deg, #f59e0b, #d97706)'; // Orange
+            }
+        }
+
+        function showTimerComplete() {
+            // Notification sonore (si possible)
+            try {
+                const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBTGH0fPTgjMGHm7A7+OZURE');
+                audio.play().catch(() => {}); // Ignorer les erreurs de lecture
+            } catch (e) {}
+            
+            showNotification('🎉 Timer terminé ! Prends une pause bien méritée', 'success');
+            
+            // Animation de completion
+            const container = document.getElementById('timerContainer');
+            container.style.animation = 'pulse 0.5s ease-in-out 3';
+            setTimeout(() => {
+                container.style.animation = '';
+            }, 1500);
+        }
+
+        // Rendre le timer toujours visible
+        function showTimerAlways() {
+            const quickActions = document.getElementById('quickActions');
+            quickActions.classList.remove('hidden');
+        }
+
+        // Initialiser le timer visible au chargement
+        showTimerAlways();
 
         // Auto-focus input
         document.getElementById('messageInput').focus();

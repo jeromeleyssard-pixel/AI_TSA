@@ -17,6 +17,9 @@ app.use(cors());
 app.use(bodyParser.json({ limit: '10mb' }));
 app.use(bodyParser.urlencoded({ extended: true, limit: '10mb' }));
 
+// Servir les fichiers statiques pour le développement local
+app.use(express.static(path.join(__dirname, '..', 'public')));
+
 // Configuration des données
 const DATA_DIR = path.join(__dirname, '..', 'data');
 
@@ -45,6 +48,21 @@ if (CLOUD_ENABLED) {
 
 // Route de santé pour Vercel
 app.get('/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    version: '2.0.0',
+    features: {
+      cloudLLM: !!cloudLLMService,
+      conversationManager: true,
+      contextMemory: true,
+      adaptiveResponses: true
+    }
+  });
+});
+
+// Route de santé avec préfixe /api pour compatibilité locale
+app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
@@ -88,7 +106,73 @@ app.get('/profile', (req, res) => {
   }
 });
 
+// Route profile avec préfixe /api pour compatibilité locale
+app.get('/api/profile', (req, res) => {
+  try {
+    const profilePath = path.join(DATA_DIR, 'profile.json');
+    if (fs.existsSync(profilePath)) {
+      const profile = JSON.parse(fs.readFileSync(profilePath, 'utf8'));
+      res.json(profile);
+    } else {
+      res.json({});
+    }
+  } catch (error) {
+    console.error('[PROFILE] Error reading profile:', error);
+    res.json({});
+  }
+});
+
 app.post('/profile', (req, res) => {
+  try {
+    ensureDataDir();
+    const profilePath = path.join(DATA_DIR, 'profile.json');
+    
+    // Validation avec schéma permissif
+    const schema = {
+      type: 'object',
+      properties: {
+        type_fonctionnement: { type: 'string' },
+        longueur_pref: { type: 'string' },
+        format_pref: { type: 'string' },
+        difficultes_principales: { type: 'array', items: { type: 'string' } },
+        sensibilite_stimulations: { type: 'string' },
+        besoin_validation: { type: 'string' },
+        usages_frequents: { type: 'array', items: { type: 'string' } }
+      },
+      required: []
+    };
+    
+    const ajv = new Ajv();
+    const validate = ajv.compile(schema);
+    
+    if (!validate(req.body)) {
+      console.warn('[PROFILE] Validation errors:', validate.errors);
+      return res.status(400).json({ 
+        error: 'Validation failed', 
+        details: validate.errors 
+      });
+    }
+    
+    const profile = {
+      ...req.body,
+      derniere_mise_a_jour: new Date().toISOString()
+    };
+    
+    fs.writeFileSync(profilePath, JSON.stringify(profile, null, 2), 'utf8');
+    
+    // Mettre à jour le conversation manager
+    const userId = req.ip || 'anonymous';
+    conversationManager.updateUserProfile(userId, profile);
+    
+    res.json({ status: 'ok', profile });
+  } catch (error) {
+    console.error('[PROFILE] Error saving profile:', error);
+    res.status(500).json({ error: 'Failed to save profile' });
+  }
+});
+
+// Route POST profile avec préfixe /api pour compatibilité locale
+app.post('/api/profile', (req, res) => {
   try {
     ensureDataDir();
     const profilePath = path.join(DATA_DIR, 'profile.json');
@@ -177,6 +261,88 @@ app.get('/onboarding/schema', (req, res) => {
 
 // Système de conversation intelligent
 app.post('/chat', async (req, res) => {
+  try {
+    const { message, sessionId, mode = 'standard' } = req.body;
+    
+    if (!message || !message.trim()) {
+      return res.status(400).json({ 
+        error: 'Message is required',
+        reply: 'Tu n\'as rien envoyé. Écris ce que tu veux faire.'
+      });
+    }
+
+    // Récupérer ou créer une session
+    const userId = req.ip || 'anonymous';
+    let currentSessionId = sessionId;
+    
+    if (!currentSessionId) {
+      currentSessionId = conversationManager.startConversation(userId);
+    }
+
+    // Charger le profil utilisateur
+    const profile = await getUserProfile(userId);
+    
+    // Ajouter le message utilisateur
+    conversationManager.addMessage(currentSessionId, message, true);
+    
+    // Générer une réponse contextuelle
+    let reply = '';
+    
+    // Essayer le cloud LLM d'abord
+    if (CLOUD_ENABLED && cloudLLMService) {
+      try {
+        console.log('[CLOUD] Attempting cloud LLM call...');
+        const cloudReply = await callCloudLLM(message, profile, mode);
+        
+        if (cloudReply && cloudReply.length > 20) {
+          reply = cloudReply;
+          console.log('[CLOUD] Using cloud LLM response');
+        } else {
+          console.log('[CLOUD] Cloud response too short, using conversation manager');
+          reply = conversationManager.generateContextualResponse(currentSessionId, message);
+        }
+      } catch (error) {
+        console.warn('[CLOUD] Cloud LLM error:', error.message);
+        reply = conversationManager.generateContextualResponse(currentSessionId, message);
+      }
+    } else {
+      console.log('[CLOUD] No cloud LLM, using conversation manager');
+      reply = conversationManager.generateContextualResponse(currentSessionId, message);
+    }
+    
+    // Ajouter la réponse de l'assistant
+    const assistantMessage = conversationManager.addMessage(currentSessionId, reply, false);
+    
+    // Obtenir le contexte actuel
+    const context = conversationManager.getCurrentContext(currentSessionId);
+    
+    // Générer des actions rapides pertinentes
+    const actions = generateQuickActions(message, profile, context);
+    
+    // Obtenir l'historique récent
+    const history = conversationManager.getConversationHistory(currentSessionId, 5);
+    
+    res.json({
+      sessionId: currentSessionId,
+      reply: reply,
+      context: context,
+      actions: actions,
+      history: history,
+      profile: profile,
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('[CHAT] Error:', error);
+    res.status(500).json({ 
+      error: 'Internal server error',
+      reply: 'Désolé, j\'ai eu un problème. Réessaye ta question.'
+    });
+  }
+});
+
+// Route chat avec préfixe /api pour compatibilité locale
+app.post('/api/chat', async (req, res) => {
   try {
     const { message, sessionId, mode = 'standard' } = req.body;
     
@@ -423,7 +589,45 @@ app.post('/feedback', (req, res) => {
   }
 });
 
-// Gestion des examples
+// Route feedback avec préfixe /api pour compatibilité locale
+app.post('/api/feedback', (req, res) => {
+  try {
+    const { sessionId, messageId, helpful, comment } = req.body;
+    
+    if (!sessionId || !messageId || typeof helpful !== 'boolean') {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+    
+    // Apprendre du feedback
+    conversationManager.learnFromFeedback(sessionId, messageId, { helpful, comment });
+    
+    // Sauvegarder le feedback
+    const feedbackPath = path.join(DATA_DIR, 'feedback.json');
+    ensureDataDir();
+    
+    let feedbacks = [];
+    if (fs.existsSync(feedbackPath)) {
+      feedbacks = JSON.parse(fs.readFileSync(feedbackPath, 'utf8'));
+    }
+    
+    feedbacks.push({
+      sessionId,
+      messageId,
+      helpful,
+      comment,
+      timestamp: new Date().toISOString()
+    });
+    
+    fs.writeFileSync(feedbackPath, JSON.stringify(feedbacks, null, 2), 'utf8');
+    
+    res.json({ status: 'ok' });
+  } catch (error) {
+    console.error('[FEEDBACK] Error:', error);
+    res.status(500).json({ error: 'Failed to save feedback' });
+  }
+});
+
+// Nettoyage périodique
 app.get('/examples', (req, res) => {
   try {
     const examplesPath = path.join(DATA_DIR, 'examples.json');
@@ -443,6 +647,16 @@ app.get('/examples', (req, res) => {
 setInterval(() => {
   conversationManager.cleanupOldConversations();
 }, 24 * 60 * 60 * 1000); // Nettoyer toutes les 24 heures
+
+// Démarrer le serveur seulement si exécuté directement
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`🚀 TSA Assistant v2.0.0 running on port ${PORT}`);
+    console.log(`📊 Features: Cloud LLM=${!!cloudLLMService}, Conversation Manager=✅`);
+    console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`🌐 Local URL: http://localhost:${PORT}`);
+  });
+}
 
 // Export pour Vercel
 module.exports = app;

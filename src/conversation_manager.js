@@ -368,10 +368,286 @@ class ConversationManager {
     const latestMessage = conversation.messages[conversation.messages.length - 1];
     const analysis = latestMessage.analysis;
     
-    // Stratégie de réponse basée sur le contexte
+    // Vérifier si on peut faire une réponse raisonnée locale
+    const reasonedResponse = this.generateReasonedResponse(conversation, analysis, userProfile, userMessage);
+    if (reasonedResponse) {
+      return reasonedResponse;
+    }
+    
+    // Stratégie de réponse basée sur le contexte (fallback)
     const responseStrategy = this.determineResponseStrategy(conversation, analysis, userProfile);
     
     return this.buildResponse(responseStrategy, conversation, userProfile);
+  }
+
+  // NOUVEAU: Génération de réponses raisonnées locales
+  generateReasonedResponse(conversation, analysis, userProfile, userMessage) {
+    try {
+      const intent = analysis.intent;
+      const emotionalTone = analysis.emotionalTone;
+      const context = conversation.context;
+      
+      // Logique de raisonnement basée sur le contexte et l'historique
+      switch (intent) {
+        case 'anxiety':
+          return this.reasonedAnxietyResponse(userMessage, analysis, userProfile, context);
+        
+        case 'blockage':
+          return this.reasonedBlockageResponse(userMessage, analysis, userProfile, context);
+        
+        case 'procrastination':
+          return this.reasonedProcrastinationResponse(userMessage, analysis, userProfile, context);
+        
+        case 'help_request':
+          return this.reasonedHelpResponse(userMessage, analysis, userProfile, context);
+        
+        case 'routine':
+          return this.reasonedRoutineResponse(userMessage, analysis, userProfile, context);
+        
+        default:
+          return this.reasonedGeneralResponse(userMessage, analysis, userProfile, context);
+      }
+    } catch (error) {
+      console.warn('[CONV] Error in reasoned response:', error.message);
+      return null; // Fallback vers les templates
+    }
+  }
+
+  // Réponses raisonnées spécifiques
+  reasonedAnxietyResponse(message, analysis, userProfile, context) {
+    const previousAnxiety = this.getRecentEmotionalPattern(context, 'anxiety');
+    const triggers = this.identifyAnxietyTriggers(message, context);
+    
+    if (previousAnxiety > 2) {
+      // Pattern de récidive - approche différente
+      return `Je vois que l'anxiété revient souvent. Cette fois, essayons une approche différente. ${triggers.work ? 'Le travail semble être un déclencheur majeur pour toi.' : ''} 
+
+Au lieu des techniques classiques, que dirais-tu de :
+1. Changer d'environnement physiquement (même 2 minutes)
+2. Écrire 3 choses qui vont bien maintenant
+3. Faire une tâche complètement différente pendant 5 minutes
+
+La nouveauté peut briser le cycle de l'anxiété. Quelle option te semble la plus faisable maintenant ?`;
+    }
+    
+    if (analysis.complexity === 'high') {
+      // Anxiété complexe - approche analytique
+      return `Ton message montre plusieurs sources d'inquiétude. Décomposons ça :
+
+${this.extractKeyConcerns(message).map((concern, i) => `${i+1}. ${concern}`).join('\n')}
+
+Laquelle de ces préoccupations est la plus urgente pour toi maintenant ? On peut commencer par la plus simple pour te redonner un sentiment de contrôle.`;
+    }
+    
+    // Première fois ou anxiété simple - approche standard
+    return null; // Utiliser les templates
+  }
+
+  reasonedBlockageResponse(message, analysis, userProfile, context) {
+    const blockageHistory = this.getBlockageHistory(context);
+    const userProfileType = userProfile.type_fonctionnement || 'unknown';
+    
+    if (blockageHistory.length > 3) {
+      // Blocage chronique - analyse profonde
+      return `Je remarque que tu fais face à des blocages régulièrement. Analysons le pattern :
+
+${blockageHistory.slice(-3).map((block, i) => `• ${block.trigger} → ${block.result}`).join('\n')}
+
+${userProfileType === 'TSA' ? 'Pour un fonctionnement TSA, les blocages viennent souvent d\'un manque de structure claire.' : userProfileType === 'TDAH' ? 'Pour un fonctionnement TDAH, les blocages viennent souvent d\'un manque de stimulation ou d\'un surplus.' : ''}
+
+Cette fois, essayons une approche basée sur ton profil : ${this.getProfileBasedBlockageSolution(userProfileType, message)}`;
+    }
+    
+    return null; // Utiliser les templates
+  }
+
+  reasonedProcrastinationResponse(message, analysis, userProfile, context) {
+    const energyLevel = this.estimateEnergyLevel(context);
+    const motivationFactors = this.identifyMotivationFactors(message);
+    
+    if (energyLevel === 'low') {
+      return `J'analyse ta situation : tu mentions vouloir faire quelque chose mais je sens une faible énergie. La procrastination n'est pas toujours de la paresse - parfois c'est ton cerveau qui te dit qu'il n'a pas les ressources maintenant.
+
+Options basées sur ton état actuel :
+1. Faire 10% de la tâche (vraiment minimal)
+2. Changer de moment (peut-être dans 1 heure après une pause)
+3. Décomposer en micro-étapes encore plus petites
+
+Laquelle résonne avec ton niveau d'énergie actuel ?`;
+    }
+    
+    return null;
+  }
+
+  reasonedHelpResponse(message, analysis, userProfile, context) {
+    const previousHelpRequests = this.getHelpHistory(context);
+    const successPatterns = this.identifySuccessPatterns(context);
+    
+    if (successPatterns.length > 0) {
+      return `Je vois que tu demandes de l'aide. J'ai remarqué que ces approches ont bien fonctionné pour toi avant :
+
+${successPatterns.slice(-2).map(pattern => `• ${pattern}`).join('\n')}
+
+Veux-tu essayer une de ces méthodes qui a déjà fait ses preuves pour toi, ou préféres-tu explorer quelque chose de complètement nouveau ?`;
+    }
+    
+    return null;
+  }
+
+  reasonedRoutineResponse(message, analysis, userProfile, context) {
+    const routineStability = this.assessRoutineStability(context);
+    
+    if (routineStability === 'unstable') {
+      return `Je sens que tes routines sont perturbées. Les changements de routine peuvent être particulièrement difficiles.
+
+Pour stabiliser la situation, je te suggère de :
+1. Revenir à UNE seule routine familière (même petite)
+2. La faire à la même heure aujourd'hui
+3. Noter ce qui se passe bien
+
+Quelle routine te semble la plus accessible maintenant ?`;
+    }
+    
+    return null;
+  }
+
+  reasonedGeneralResponse(message, analysis, userProfile, context) {
+    const conversationDepth = context.messageCount || 0;
+    const engagementLevel = this.calculateEngagement(context);
+    
+    if (conversationDepth > 5 && engagementLevel === 'low') {
+      return `Je suis là depuis plusieurs messages avec toi. J'ai l'impression que nos échanges pourraient être plus efficaces.
+
+Changeons d'approche : plutôt que de donner des conseils, je peux te poser des questions plus ciblées ou essayer une technique complètement différente.
+
+Qu'est-ce qui fonctionnerait le mieux pour toi maintenant : questions, actions concrètes, ou changement de sujet ?`;
+    }
+    
+    return null;
+  }
+
+  // Fonctions utilitaires pour le raisonnement
+  getRecentEmotionalPattern(context, emotion) {
+    const recentMessages = context.recentMessages || [];
+    return recentMessages.filter(msg => 
+      msg.analysis && msg.analysis.emotionalTone === emotion
+    ).length;
+  }
+
+  identifyAnxietyTriggers(message, context) {
+    const workKeywords = ['travail', 'boulot', 'job', 'réunion', 'collègue', 'chef'];
+    const socialKeywords = ['personne', 'ami', 'famille', 'sortie', 'social'];
+    const healthKeywords = ['santé', 'malade', 'docteur', 'médicament'];
+    
+    const messageLower = message.toLowerCase();
+    
+    return {
+      work: workKeywords.some(keyword => messageLower.includes(keyword)),
+      social: socialKeywords.some(keyword => messageLower.includes(keyword)),
+      health: healthKeywords.some(keyword => messageLower.includes(keyword))
+    };
+  }
+
+  extractKeyConcerns(message) {
+    // Extraction simple des préoccupations principales
+    const concerns = [];
+    
+    if (message.includes('travail')) concerns.push('Préoccupations professionnelles');
+    if (message.includes('argent') || message.includes('budget')) concerns.push('Situation financière');
+    if (message.includes('santé')) concerns.push('Questions de santé');
+    if (message.includes('famille') || message.includes('relation')) concerns.push('Relations interpersonnelles');
+    if (message.includes('avenir') || message.includes('carrière')) concerns.push('Orientation future');
+    
+    return concerns.length > 0 ? concerns : ['Préoccupations générales'];
+  }
+
+  getBlockageHistory(context) {
+    const recentMessages = context.recentMessages || [];
+    return recentMessages.filter(msg => 
+      msg.analysis && msg.analysis.intent === 'blockage'
+    ).map(msg => ({
+      trigger: msg.content.substring(0, 50) + '...',
+      result: 'Blocage identifié'
+    }));
+  }
+
+  getProfileBasedBlockageSolution(profileType, message) {
+    const solutions = {
+      TSA: "créons une structure très claire avec des étapes précises et visibles. Chaque action doit être explicite et sans ambiguïté.",
+      TDAH: "utilisons une approche avec stimulation variée et récompenses immédiates. Commençons par l'action la plus stimulante.",
+      mixte: "alternons structure claire et stimulation. Une petite action, puis une pause stimulante, et ainsi de suite.",
+      default: "commençons par la plus petite action possible, même ridiculement petite."
+    };
+    
+    return solutions[profileType] || solutions.default;
+  }
+
+  estimateEnergyLevel(context) {
+    const recentMessages = context.recentMessages || [];
+    const energyIndicators = {
+      high: ['motivé', 'enthousiaste', 'prêt', 'énergie'],
+      low: ['fatigué', 'épuisé', 'las', 'difficile', 'lourd'],
+      medium: ['je peux', 'je vais', 'possible']
+    };
+    
+    const messageTexts = recentMessages.map(msg => msg.content.toLowerCase()).join(' ');
+    
+    for (const [level, indicators] of Object.entries(energyIndicators)) {
+      if (indicators.some(indicator => messageTexts.includes(indicator))) {
+        return level;
+      }
+    }
+    
+    return 'medium';
+  }
+
+  identifyMotivationFactors(message) {
+    const factors = [];
+    
+    if (message.includes('dois') || message.includes('falloir')) factors.push('obligation');
+    if (message.includes('veux') || message.includes('aimerais')) factors.push('désir');
+    if (message.includes('peur') || message.includes('inquiétude')) factors.push('crainte');
+    if (message.includes('plaisir') || message.includes('intéressant')) factors.push('intérêt');
+    
+    return factors;
+  }
+
+  getHelpHistory(context) {
+    const recentMessages = context.recentMessages || [];
+    return recentMessages.filter(msg => 
+      msg.analysis && msg.analysis.intent === 'help_request'
+    );
+  }
+
+  identifySuccessPatterns(context) {
+    // Simplifié : retourner des patterns de succès basiques
+    return ['Respiration et micro-actions', 'Décomposition en étapes simples'];
+  }
+
+  assessRoutineStability(context) {
+    const recentMessages = context.recentMessages || [];
+    const routineKeywords = ['routine', 'habitude', 'toujours', 'chaque jour', 'matin', 'soir'];
+    
+    const messageTexts = recentMessages.map(msg => msg.content.toLowerCase()).join(' ');
+    const routineMentions = routineKeywords.filter(keyword => messageTexts.includes(keyword));
+    
+    if (routineMentions.length > 0) {
+      return routineMentions.length > 3 ? 'unstable' : 'stable';
+    }
+    
+    return 'unknown';
+  }
+
+  calculateEngagement(context) {
+    const recentMessages = context.recentMessages || [];
+    if (recentMessages.length === 0) return 'medium';
+    
+    // Calculer la longueur moyenne des messages
+    const avgLength = recentMessages.reduce((sum, msg) => sum + msg.content.length, 0) / recentMessages.length;
+    
+    if (avgLength < 20) return 'low';
+    if (avgLength > 100) return 'high';
+    return 'medium';
   }
 
   determineResponseStrategy(conversation, analysis, userProfile) {
@@ -782,19 +1058,57 @@ class ResponseBuilder {
   }
 
   buildBreathing() {
-    return "Respirons ensemble :\n• Inspire par le nez pendant 4 secondes\n• Bloque ta respiration 4 secondes\n• Souffle par la bouche 4 secondes\n• Répète 3 fois";
+    return this.getVariation('breathing', [
+      "Respirons ensemble :\n• Inspire par le nez pendant 4 secondes\n• Bloque ta respiration 4 secondes\n• Souffle par la bouche 4 secondes\n• Répète 3 fois",
+      
+      "Exercice de respiration carrée :\n• Inspire 4 secondes (compte jusqu'à 4)\n• Retiens 4 secondes (compte jusqu'à 4)\n• Expire 4 secondes (compte jusqu'à 4)\n• Pause 4 secondes (compte jusqu'à 4)\n• Fais 3 cycles complets",
+      
+      "Respiration apaisante :\n• Place une main sur ton ventre\n• Inspire lentement par le nez (5 secondes)\n• Expire doucement par la bouche (7 secondes)\n• Sens ta main monter et descendre\n• Continue pendant 2 minutes",
+      
+      "Technique 4-7-8 contre l'anxiété :\n• Inspire par le nez pendant 4 secondes\n• Retiens ta respiration 7 secondes\n• Souffle par la bouche 8 secondes (bruit d'océan)\n• Répète 4 fois maximum",
+      
+      "Respiration alternative :\n• Bouche une narine\n• Inspire par l'autre narine (4 secondes)\n• Change de narine\n• Expire par la première (4 secondes)\n• Alterne pendant 2 minutes"
+    ]);
   }
 
   buildGrounding() {
-    return "Ancrage rapide :\n• Nomme 5 choses que tu vois\n• Touche 4 objets autour de toi\n• Écoute 3 sons\n• Sens 2 odeurs\n• Goûte 1 chose";
+    return this.getVariation('grounding', [
+      "Ancrage rapide :\n• Nomme 5 choses que tu vois\n• Touche 4 objets autour de toi\n• Écoute 3 sons\n• Sens 2 odeurs\n• Goûte 1 chose",
+      
+      "Ancrage sensoriel complet :\n• Regarde autour et nomme 4 couleurs\n• Touche 3 textures différentes\n• Écoute 2 sons distincts\n• Sens 1 température (air, objet)\n• Respire et sens ton corps",
+      
+      "Ancrage par le mouvement :\n• Tapote 5 fois sur tes cuisses\n• Étire tes bras vers le ciel (3 secondes)\n• Tourne ta tête doucement (gauche-droite)\n• Secoue tes mains (relâche la tension)\n• Pose tes pieds fermement au sol",
+      
+      "Ancrage mental rapide :\n• Trouve 3 objets bleus autour de toi\n• Compte jusqu'à 10 lentement\n• Pense à 2 choses qui te rendent heureux\n• Nomme 1 personne que tu apprécies\n• Sens ton cœur battre dans ta poitrine"
+    ]);
   }
 
   buildMicroAction() {
-    return "Micro-action immédiate : Quelle est LA SEULE chose que tu peux faire maintenant qui prend moins de 30 secondes ?";
+    return this.getVariation('micro_action', [
+      "Micro-action immédiate : Quelle est LA SEULE chose que tu peux faire maintenant qui prend moins de 30 secondes ?",
+      
+      "Action ultra-simple : Si tu devais faire UNE SEULE chose maintenant, quelle serait la plus petite action possible ?",
+      
+      "Défi micro-tâche : Trouve une action que tu peux faire en moins de 20 secondes. Lance-toi tout de suite !",
+      
+      "Premier pas minuscule : Quel est le tout premier mouvement que tu peux faire pour commencer ? Juste un geste physique.",
+      
+      "Action de 15 secondes : Chronomètre 15 secondes et fais une seule chose liée à ta tâche. C'est tout !"
+    ]);
   }
 
   buildImmediateAction() {
-    return "Action immédiate ! Lève-toi, fais 10 pas, reviens. Puis lance un timer de 2 minutes sur une tâche. C'est parti !";
+    return this.getVariation('immediate_action', [
+      "Action immédiate ! Lève-toi, fais 10 pas, reviens. Puis lance un timer de 2 minutes sur une tâche. C'est parti !",
+      
+      "Mouvement maintenant ! Debout, étire-toi pendant 10 secondes, puis ouvre ton document. Lance un timer de 1 minute.",
+      
+      "Défi physique : Fais 5 jumping jacks, bois un verre d'eau, puis commence ta tâche pendant 90 secondes. Go !",
+      
+      "Routine d'activation : Marche sur place 30 secondes, respire profondément, puis fais UNE SEULE chose liée à ta tâche.",
+      
+      "Action éclair : Compte jusqu'à 3, lève-toi, fais une pirouette (ou pas !), puis lance un timer de 3 minutes."
+    ]);
   }
 
   buildMotivation() {
@@ -842,7 +1156,12 @@ class ResponseBuilder {
   }
 
   buildVariety() {
-    return "Varie les plaisirs : Change de lieu, de musique, de méthode. Ton cerveau adore la nouveauté !";
+    return this.getVariation('variety', [
+      "Varions les approches ! Essayons quelque chose de différent cette fois.",
+      "Changeons de perspective ! Une autre stratégie pourrait mieux fonctionner.",
+      "Nouvelle approche ! Testons une méthode alternative.",
+      "Variation intéressante ! Essayons un angle différent."
+    ]);
   }
 
   buildEnergyManagement() {
