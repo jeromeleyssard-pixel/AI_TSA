@@ -602,7 +602,7 @@ app.post('/ask', async (req, res) => {
           `Excellent choix ! On va faire ${task} en mode focus`,
           "Étape 1 : Prépare ton téléphone/ordinateur (1 minute)",
           "Étape 2 : Mets un timer 5 minutes et envoie le message",
-          "Étape 3 : Coche "fait" et passe à autre chose",
+          "Étape 3 : Coche 'fait' et passe à autre chose",
           "Pas de perfection, juste l'action. C'est parti ?"
         ],
         mixte: [
