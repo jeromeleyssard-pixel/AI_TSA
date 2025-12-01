@@ -8,12 +8,13 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Configuration du cloud
-const CLOUD_ENABLED = process.env.OPENAI_API_KEY || process.env.ANTHROPIC_API_KEY;
+const CLOUD_ENABLED = process.env.ANTHROPIC_API_KEY || process.env.OPENAI_API_KEY;
 let cloudLLMService = null;
 
+// Forcer l'initialisation du cloud si clé disponible
 if (CLOUD_ENABLED) {
   try {
-    const CloudLLMService = require('./src/cloud_llm');
+    const CloudLLMService = require('../src/cloud_llm');
     cloudLLMService = new CloudLLMService();
     console.log('[CLOUD] LLM service initialized with', cloudLLMService.provider);
   } catch (error) {
@@ -507,6 +508,11 @@ app.post('/ask', async (req, res) => {
     return contextualPrompt;
   }
   // Appel LLM : priorité au cloud, fallback sur Ollama local
+  console.log('[DEBUG] CLOUD_ENABLED:', !!CLOUD_ENABLED);
+  console.log('[DEBUG] cloudLLMService:', !!cloudLLMService);
+  console.log('[DEBUG] ANTHROPIC_API_KEY:', !!process.env.ANTHROPIC_API_KEY);
+  console.log('[DEBUG] OPENAI_API_KEY:', !!process.env.OPENAI_API_KEY);
+  
   if (
     message &&
     mode !== 'surcharge' &&
@@ -516,6 +522,7 @@ app.post('/ask', async (req, res) => {
   ) {
     // 1) Essayer le cloud LLM d'abord
     if (CLOUD_ENABLED && cloudLLMService) {
+      console.log('[DEBUG] Tentative appel cloud LLM...');
       try {
         llmReply = await cloudLLMService.callLLM(prompt, message, profile, mode, phase);
         if (llmReply && !cloudLLMService.validateReply(llmReply, message)) {
@@ -528,6 +535,8 @@ app.post('/ask', async (req, res) => {
         console.warn('[CLOUD] Erreur appel LLM:', error.message);
         llmReply = null;
       }
+    } else {
+      console.log('[DEBUG] Cloud non disponible, utilisation heuristiques');
     }
     
     // 2) Fallback sur Ollama local si cloud échoue
