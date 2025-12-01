@@ -415,12 +415,13 @@ class ConversationManager {
 
   // Réponses raisonnées spécifiques
   reasonedAnxietyResponse(message, analysis, userProfile, context) {
-    const previousAnxiety = this.getRecentEmotionalPattern(context, 'anxiety');
-    const triggers = this.identifyAnxietyTriggers(message, context);
-    
-    if (previousAnxiety > 2) {
-      // Pattern de récidive - approche différente
-      return `Je vois que l'anxiété revient souvent. Cette fois, essayons une approche différente. ${triggers.work ? 'Le travail semble être un déclencheur majeur pour toi.' : ''} 
+    try {
+      const previousAnxiety = this.getRecentEmotionalPattern(context, 'anxiety');
+      const triggers = this.identifyAnxietyTriggers(message, context);
+      
+      if (previousAnxiety > 2) {
+        // Pattern de récidive - approche différente
+        return `Je vois que l'anxiété revient souvent. Cette fois, essayons une approche différente. ${triggers.work ? 'Le travail semble être un déclencheur majeur pour toi.' : ''} 
 
 Au lieu des techniques classiques, que dirais-tu de :
 1. Changer d'environnement physiquement (même 2 minutes)
@@ -428,45 +429,55 @@ Au lieu des techniques classiques, que dirais-tu de :
 3. Faire une tâche complètement différente pendant 5 minutes
 
 La nouveauté peut briser le cycle de l'anxiété. Quelle option te semble la plus faisable maintenant ?`;
-    }
-    
-    if (analysis.complexity === 'high') {
-      // Anxiété complexe - approche analytique
-      return `Ton message montre plusieurs sources d'inquiétude. Décomposons ça :
+      }
+      
+      if (analysis.complexity === 'high') {
+        // Anxiété complexe - approche analytique
+        return `Ton message montre plusieurs sources d'inquiétude. Décomposons ça :
 
 ${this.extractKeyConcerns(message).map((concern, i) => `${i+1}. ${concern}`).join('\n')}
 
 Laquelle de ces préoccupations est la plus urgente pour toi maintenant ? On peut commencer par la plus simple pour te redonner un sentiment de contrôle.`;
+      }
+      
+      // Première fois ou anxiété simple - approche standard
+      return null; // Utiliser les templates
+    } catch (error) {
+      console.warn('[CONV] Error in reasoned anxiety response:', error.message);
+      return null; // Fallback vers les templates
     }
-    
-    // Première fois ou anxiété simple - approche standard
-    return null; // Utiliser les templates
   }
 
   reasonedBlockageResponse(message, analysis, userProfile, context) {
-    const blockageHistory = this.getBlockageHistory(context);
-    const userProfileType = userProfile.type_fonctionnement || 'unknown';
-    
-    if (blockageHistory.length > 3) {
-      // Blocage chronique - analyse profonde
-      return `Je remarque que tu fais face à des blocages régulièrement. Analysons le pattern :
+    try {
+      const blockageHistory = this.getBlockageHistory(context);
+      const userProfileType = userProfile.type_fonctionnement || 'unknown';
+      
+      if (blockageHistory.length > 3) {
+        // Blocage chronique - analyse profonde
+        return `Je remarque que tu fais face à des blocages régulièrement. Analysons le pattern :
 
 ${blockageHistory.slice(-3).map((block, i) => `• ${block.trigger} → ${block.result}`).join('\n')}
 
 ${userProfileType === 'TSA' ? 'Pour un fonctionnement TSA, les blocages viennent souvent d\'un manque de structure claire.' : userProfileType === 'TDAH' ? 'Pour un fonctionnement TDAH, les blocages viennent souvent d\'un manque de stimulation ou d\'un surplus.' : ''}
 
 Cette fois, essayons une approche basée sur ton profil : ${this.getProfileBasedBlockageSolution(userProfileType, message)}`;
+      }
+      
+      return null; // Utiliser les templates
+    } catch (error) {
+      console.warn('[CONV] Error in reasoned blockage response:', error.message);
+      return null;
     }
-    
-    return null; // Utiliser les templates
   }
 
   reasonedProcrastinationResponse(message, analysis, userProfile, context) {
-    const energyLevel = this.estimateEnergyLevel(context);
-    const motivationFactors = this.identifyMotivationFactors(message);
-    
-    if (energyLevel === 'low') {
-      return `J'analyse ta situation : tu mentions vouloir faire quelque chose mais je sens une faible énergie. La procrastination n'est pas toujours de la paresse - parfois c'est ton cerveau qui te dit qu'il n'a pas les ressources maintenant.
+    try {
+      const energyLevel = this.estimateEnergyLevel(context);
+      const motivationFactors = this.identifyMotivationFactors(message);
+      
+      if (energyLevel === 'low') {
+        return `J'analyse ta situation : tu mentions vouloir faire quelque chose mais je sens une faible énergie. La procrastination n'est pas toujours de la paresse - parfois c'est ton cerveau qui te dit qu'il n'a pas les ressources maintenant.
 
 Options basées sur ton état actuel :
 1. Faire 10% de la tâche (vraiment minimal)
@@ -474,31 +485,41 @@ Options basées sur ton état actuel :
 3. Décomposer en micro-étapes encore plus petites
 
 Laquelle résonne avec ton niveau d'énergie actuel ?`;
+      }
+      
+      return null;
+    } catch (error) {
+      console.warn('[CONV] Error in reasoned procrastination response:', error.message);
+      return null;
     }
-    
-    return null;
   }
 
   reasonedHelpResponse(message, analysis, userProfile, context) {
-    const previousHelpRequests = this.getHelpHistory(context);
-    const successPatterns = this.identifySuccessPatterns(context);
-    
-    if (successPatterns.length > 0) {
-      return `Je vois que tu demandes de l'aide. J'ai remarqué que ces approches ont bien fonctionné pour toi avant :
+    try {
+      const previousHelpRequests = this.getHelpHistory(context);
+      const successPatterns = this.identifySuccessPatterns(context);
+      
+      if (successPatterns.length > 0) {
+        return `Je vois que tu demandes de l'aide. J'ai remarqué que ces approches ont bien fonctionné pour toi avant :
 
 ${successPatterns.slice(-2).map(pattern => `• ${pattern}`).join('\n')}
 
 Veux-tu essayer une de ces méthodes qui a déjà fait ses preuves pour toi, ou préféres-tu explorer quelque chose de complètement nouveau ?`;
+      }
+      
+      return null;
+    } catch (error) {
+      console.warn('[CONV] Error in reasoned help response:', error.message);
+      return null;
     }
-    
-    return null;
   }
 
   reasonedRoutineResponse(message, analysis, userProfile, context) {
-    const routineStability = this.assessRoutineStability(context);
-    
-    if (routineStability === 'unstable') {
-      return `Je sens que tes routines sont perturbées. Les changements de routine peuvent être particulièrement difficiles.
+    try {
+      const routineStability = this.assessRoutineStability(context);
+      
+      if (routineStability === 'unstable') {
+        return `Je sens que tes routines sont perturbées. Les changements de routine peuvent être particulièrement difficiles.
 
 Pour stabiliser la situation, je te suggère de :
 1. Revenir à UNE seule routine familière (même petite)
@@ -506,24 +527,33 @@ Pour stabiliser la situation, je te suggère de :
 3. Noter ce qui se passe bien
 
 Quelle routine te semble la plus accessible maintenant ?`;
+      }
+      
+      return null;
+    } catch (error) {
+      console.warn('[CONV] Error in reasoned routine response:', error.message);
+      return null;
     }
-    
-    return null;
   }
 
   reasonedGeneralResponse(message, analysis, userProfile, context) {
-    const conversationDepth = context.messageCount || 0;
-    const engagementLevel = this.calculateEngagement(context);
-    
-    if (conversationDepth > 5 && engagementLevel === 'low') {
-      return `Je suis là depuis plusieurs messages avec toi. J'ai l'impression que nos échanges pourraient être plus efficaces.
+    try {
+      const conversationDepth = context.messageCount || 0;
+      const engagementLevel = this.calculateEngagement(context);
+      
+      if (conversationDepth > 5 && engagementLevel === 'low') {
+        return `Je suis là depuis plusieurs messages avec toi. J'ai l'impression que nos échanges pourraient être plus efficaces.
 
 Changeons d'approche : plutôt que de donner des conseils, je peux te poser des questions plus ciblées ou essayer une technique complètement différente.
 
 Qu'est-ce qui fonctionnerait le mieux pour toi maintenant : questions, actions concrètes, ou changement de sujet ?`;
+      }
+      
+      return null;
+    } catch (error) {
+      console.warn('[CONV] Error in reasoned general response:', error.message);
+      return null;
     }
-    
-    return null;
   }
 
   // Fonctions utilitaires pour le raisonnement
