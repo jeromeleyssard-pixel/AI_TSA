@@ -205,9 +205,29 @@ MIT License
 
 ## 🙏 Remerciements
 
+### Auteurs et Supervision
+- **Jérôme Leyssard** - Développeur principal  
+  📧 jeromeley.apps@gmail.com
+- **Dr. Laurie Centelles, PhD** - Supervision scientifique  
+  Docteure en Sciences de la Cognition
+
+### Projets Open Source
+Un grand merci aux projets exceptionnels qui rendent cette application possible :
+- **[Ollama](https://ollama.ai)** - Exécution locale de modèles LLM
+- **[Mistral AI](https://mistral.ai)** - Modèles de langue performants
+- **[OpenAI](https://openai.com)** - API GPT-4 pour version cloud
+- **[Anthropic](https://anthropic.com)** - Claude 3 pour conversations empathiques
+
+### Communauté
 - Communauté TSA/TDAH pour les retours et tests
+- Testeurs neuroatypiques pour leur précieux feedback
 - Contributeurs open source
-- Testeurs neuroatypiques
+
+---
+
+## 📝 License
+
+MIT License
 
 ---
 

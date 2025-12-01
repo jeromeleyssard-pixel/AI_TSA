@@ -165,6 +165,12 @@
         <a href="/" style="color: #0069d9;">← Retour au chat</a>
       </p>
     </div>
+    
+    <footer style="margin-top: 40px; padding: 20px; border-top: 2px solid #dde8ff; text-align: center; color: #666; font-size: 0.9rem; line-height: 1.4;">
+      <p><strong>Application gratuite créée par Jérôme Leyssard</strong> - <a href="mailto:jeromeley.apps@gmail.com">jeromeley.apps@gmail.com</a></p>
+      <p style="margin: 10px 0;">Merci aux projets open source : <a href="https://ollama.ai" target="_blank">Ollama</a> et <a href="https://mistral.ai" target="_blank">Mistral AI</a> pour leurs modèles exceptionnels</p>
+      <p><strong>Application créée sous la supervision de Laurie Centelles, PhD</strong><br>Docteure en Sciences de la Cognition</p>
+    </footer>
   </div>
 
   <script>
@@ -218,7 +224,7 @@
           response = await fetch('/test-ollama', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify { model, url }
+            body: JSON.stringify({ model, url })
           });
         }
         
