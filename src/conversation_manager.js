@@ -574,10 +574,10 @@ Qu'est-ce qui fonctionnerait le mieux pour toi maintenant : questions, actions c
     return recentMessages.filter(msg => 
       msg.isUser === false && // Seulement les réponses de l'assistant
       msg.content && 
-      msg.content.toLowerCase().includes('anxi') || // Contient des mots liés à l'anxiété
-      msg.content.toLowerCase().includes('stress') ||
-      msg.content.toLowerCase().includes('peur') ||
-      msg.content.toLowerCase().includes('inqui')
+      (msg.content.toLowerCase().includes('anxi') || // Contient des mots liés à l'anxiété
+       msg.content.toLowerCase().includes('stress') ||
+       msg.content.toLowerCase().includes('peur') ||
+       msg.content.toLowerCase().includes('inqui'))
     ).length;
   }
 
@@ -1087,6 +1087,42 @@ class ResponseBuilder {
     this.conversation = conversation;
     this.profile = userProfile;
     this.context = conversation.context;
+    // Initialiser le suivi des variations
+    this.usedResponses = new Map();
+  }
+
+  // Système de variation pour éviter les répétitions
+  getVariation(type, variations) {
+    const sessionId = this.conversation.id;
+    const history = this.conversation.messages || [];
+    const trackingKey = `${sessionId}_${type}`;
+    
+    if (!this.usedResponses) this.usedResponses = new Map();
+    const usedInSession = this.usedResponses.get(trackingKey) || [];
+    
+    // Vérifier les réponses récentes
+    const recentResponses = history.slice(-6).map(msg => msg.content.toLowerCase());
+    
+    const availableVariations = variations.filter(variation => {
+      const variationLower = variation.toLowerCase();
+      const recentlyUsed = recentResponses.some(response => response.includes(variationLower.substring(0, 20)));
+      const usedInThisSession = usedInSession.includes(variation);
+      return !recentlyUsed && !usedInThisSession;
+    });
+    
+    if (availableVariations.length > 0) {
+      const selected = availableVariations[Math.floor(Math.random() * availableVariations.length)];
+      usedInSession.push(selected);
+      this.usedResponses.set(trackingKey, usedInSession);
+      if (usedInSession.length > 5) usedInSession.shift();
+      return selected;
+    }
+    
+    // Si toutes les variations sont utilisées, modifier la première
+    const baseVariation = variations[0];
+    const modifiers = ["Essayons cette approche : ", "Voici une version adaptée : ", "Cette fois-ci : ", "Alternative : ", "Nouvelle tentative : "];
+    const modifier = modifiers[Math.floor(Math.random() * modifiers.length)];
+    return modifier + baseVariation;
   }
 
   build() {
