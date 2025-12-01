@@ -368,15 +368,16 @@ class ConversationManager {
     const latestMessage = conversation.messages[conversation.messages.length - 1];
     const analysis = latestMessage.analysis;
     
-    // Vérifier si on peut faire une réponse raisonnée locale
+    // PRIORITÉ: 1. Raisonnement local, 2. Templates améliorés
     const reasonedResponse = this.generateReasonedResponse(conversation, analysis, userProfile, userMessage);
     if (reasonedResponse) {
+      console.log('[CONV] Using reasoned response');
       return reasonedResponse;
     }
     
-    // Stratégie de réponse basée sur le contexte (fallback)
+    // Fallback vers les templates améliorés
+    console.log('[CONV] Using template-based response');
     const responseStrategy = this.determineResponseStrategy(conversation, analysis, userProfile);
-    
     return this.buildResponse(responseStrategy, conversation, userProfile);
   }
 
@@ -419,9 +420,10 @@ class ConversationManager {
       const previousAnxiety = this.getRecentEmotionalPattern(context, 'anxiety');
       const triggers = this.identifyAnxietyTriggers(message, context);
       
-      if (previousAnxiety > 2) {
+      // Baisser le seuil : déclencher dès la 2ème fois
+      if (previousAnxiety >= 1) {
         // Pattern de récidive - approche différente
-        return `Je vois que l'anxiété revient souvent. Cette fois, essayons une approche différente. ${triggers.work ? 'Le travail semble être un déclencheur majeur pour toi.' : ''} 
+        return `Je vois que l'anxiété revient. Cette fois, essayons une approche différente. ${triggers.work ? 'Le travail semble être un déclencheur pour toi.' : ''} 
 
 Au lieu des techniques classiques, que dirais-tu de :
 1. Changer d'environnement physiquement (même 2 minutes)
@@ -431,7 +433,8 @@ Au lieu des techniques classiques, que dirais-tu de :
 La nouveauté peut briser le cycle de l'anxiété. Quelle option te semble la plus faisable maintenant ?`;
       }
       
-      if (analysis.complexity === 'high') {
+      // Toujours essayer le raisonnement pour l'anxiété complexe
+      if (analysis.complexity === 'high' || message.length > 50) {
         // Anxiété complexe - approche analytique
         return `Ton message montre plusieurs sources d'inquiétude. Décomposons ça :
 
@@ -440,7 +443,6 @@ ${this.extractKeyConcerns(message).map((concern, i) => `${i+1}. ${concern}`).joi
 Laquelle de ces préoccupations est la plus urgente pour toi maintenant ? On peut commencer par la plus simple pour te redonner un sentiment de contrôle.`;
       }
       
-      // Première fois ou anxiété simple - approche standard
       return null; // Utiliser les templates
     } catch (error) {
       console.warn('[CONV] Error in reasoned anxiety response:', error.message);
@@ -1076,7 +1078,13 @@ class ResponseBuilder {
 
   // Implémentations des éléments de réponse
   buildClarification() {
-    return "Je veux bien t'aider. Pour te donner la meilleure réponse, dis-moi précisément ce que tu veux accomplir.";
+    return this.getVariation('clarification', [
+      "Je veux bien t'aider. Pour te donner la meilleure réponse, dis-moi précisément ce que tu veux accomplir.",
+      "Je suis là pour toi ! Pour mieux t'aider, peux-tu me dire exactement ce dont tu as besoin maintenant ?",
+      "Absolument ! Pour te donner la réponse la plus utile, décris-moi ta situation ou ton objectif.",
+      "Bien sûr ! Plus tu me donnes de détails sur ce que tu vis, plus je pourrai t'aider efficacement.",
+      "Je t'écoute. Quelle est la chose la plus importante que tu aimerais accomplir maintenant ?"
+    ]);
   }
 
   buildBreakdown() {
@@ -1219,7 +1227,13 @@ class ResponseBuilder {
   }
 
   buildStructure() {
-    return "Structure claire :\nObjectif → Étapes → Temps → Validation. Simple et efficace.";
+    return this.getVariation('structure', [
+      "Structure claire :\nObjectif → Étapes → Temps → Validation. Simple et efficace.",
+      "Organisons ça ensemble :\n1. Quel est ton objectif principal ?\n2. Quelles étapes pour y arriver ?\n3. Combien de temps par étape ?\n4. Comment vérifier que c'est fait ?",
+      "Créons un plan simple :\n• Objectif précis\n• Actions concrètes\n• Temps défini\n• Résultat visible",
+      "Mettons de l'ordre :\n🎯 Cible : Une seule chose\n📋 Actions : Maximum 3 étapes\n⏰ Temps : Court et défini\n✅ Validation : Comment savoir c'est bon ?",
+      "Plan d'action minimaliste :\n1. CHOISIR une seule chose\n2. DÉCOMPOSER en micro-étapes\n3. CHRONOMÉTRER chaque étape\n4. CÉLÉBRER chaque victoire"
+    ]);
   }
 
   buildRest() {

@@ -139,10 +139,11 @@ app.post('/profile', (req, res) => {
         besoin_validation: { type: 'string' },
         usages_frequents: { type: 'array', items: { type: 'string' } }
       },
-      required: []
+      required: [],
+      additionalProperties: true // Permettre des propriétés supplémentaires
     };
     
-    const ajv = new Ajv();
+    const ajv = new Ajv({ allErrors: true });
     const validate = ajv.compile(schema);
     
     if (!validate(req.body)) {
@@ -158,16 +159,25 @@ app.post('/profile', (req, res) => {
       derniere_mise_a_jour: new Date().toISOString()
     };
     
+    // S'assurer que le répertoire existe
+    if (!fs.existsSync(DATA_DIR)) {
+      fs.mkdirSync(DATA_DIR, { recursive: true });
+    }
+    
     fs.writeFileSync(profilePath, JSON.stringify(profile, null, 2), 'utf8');
     
     // Mettre à jour le conversation manager
     const userId = req.ip || 'anonymous';
     conversationManager.updateUserProfile(userId, profile);
     
+    console.log('[PROFILE] Profile saved successfully for user:', userId);
     res.json({ status: 'ok', profile });
   } catch (error) {
     console.error('[PROFILE] Error saving profile:', error);
-    res.status(500).json({ error: 'Failed to save profile' });
+    res.status(500).json({ 
+      error: 'Failed to save profile', 
+      message: error.message 
+    });
   }
 });
 
