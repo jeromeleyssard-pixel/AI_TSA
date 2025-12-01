@@ -963,6 +963,134 @@ app.post('/ask', async (req, res) => {
 
   function shortLine(text) { return text.replace(/\s+/g, ' ').trim(); }
 
+  // Fonction fallback améliorée pour les réponses
+  function generateEnhancedFallback(message, profile, mode, prefLength, prefFormat) {
+    const msg = message.toLowerCase();
+    const profileType = (profile && profile.type_fonctionnement) || 'mixte';
+    
+    // Détection rapide pour réponses contextuelles
+    if (/(anxieux|stressé|inquiet|panique|angoissé|crainte)/.test(msg)) {
+      return generateAnxietyResponse(profileType, prefLength);
+    } else if (/(procrastine|retarde|diffère|reporte|pas envie)/.test(msg)) {
+      return generateProcrastinationResponse(profileType, prefLength);
+    } else if (/(bloque|bloqué|difficile|problème|impossible)/.test(msg)) {
+      return generateBlockageResponse(profileType, prefLength);
+    } else if (/(fatigué|épuisé|sans énergie|vide)/.test(msg)) {
+      return generateFatigueResponse(profileType, prefLength);
+    } else if (/(travail|bureau|professionnel|job)/.test(msg)) {
+      return generateWorkResponse(profileType, prefLength);
+    } else if (/(aide|aide-moi|comment|besoin|soutien)/.test(msg)) {
+      return generateHelpResponse(profileType, prefLength);
+    } else {
+      return generateGeneralResponse(profileType, prefLength);
+    }
+  }
+
+  function generateAnxietyResponse(profileType, prefLength) {
+    const responses = {
+      TSA: prefLength === 'long' 
+        ? "Je sens ton anxiété. C'est normal et temporaire. Ton cerveau TSA anticipe beaucoup de scénarios. Respire : 4 sec inspire, 4 sec bloque, 4 sec souffle. Puis fais UNE seule action très simple. Le reste peut attendre."
+        : "Anxiété normale. Respire 4-4-4. Fais une micro-action. Le reste attend.",
+      TDAH: prefLength === 'long'
+        ? "Anxiété TDAH ? Ton cerveau tourne en boucle. Coupons ça ! Lève-toi, marche 30 secondes, reviens. Puis timer 5 minutes sur UNE chose. Let's go !"
+        : "Bouge 30 sec pour couper l'anxiété. Timer 5 min sur une tâche. C'est parti !",
+      mixte: prefLength === 'long'
+        ? "Je comprends ton anxiété. C'est une réaction normale. Respire profondément, choisis la plus petite action possible, et fais-la maintenant. Tu peux gérer ça."
+        : "Respire, choisis une micro-action, fais-la maintenant. Tu peux le faire."
+    };
+    return responses[profileType];
+  }
+
+  function generateProcrastinationResponse(profileType, prefLength) {
+    const responses = {
+      TSA: prefLength === 'long'
+        ? "Procrastiner est normal, surtout TSA. La tâche semble trop grande. Réduis-la à l'absurde : 'Ouvre juste le document' (2 secondes). Pas de perfection, juste l'action."
+        : "Tâche trop grande ? Réduis à 30 secondes. Ouvre juste l'application.",
+      TDAH: prefLength === 'long'
+        ? "Procrastination TDAH ? Manque de dopamine ! Créons de l'urgence : timer 1 minute à fond, puis récompense immédiate. Transforme en jeu rapide !"
+        : "Timer 1 minute max ! Musique motivante. C'est un défi !",
+      mixte: prefLength === 'long'
+        ? "La procrastination est une protection contre la surcharge. Solution : micro-action + récompense. '1 minute de travail' puis 'musique préférée'."
+        : "Micro-action 1 minute + récompense. Simple et efficace."
+    };
+    return responses[profileType];
+  }
+
+  function generateBlockageResponse(profileType, prefLength) {
+    const responses = {
+      TSA: prefLength === 'long'
+        ? "Tu es bloqué, c'est normal. Ton cerveau TSA voit tous les détails en même temps. Cache tout sauf UNE seule chose. Quelle est LA SEULE action possible maintenant ?"
+        : "Bloqué ? Cache tout sauf UNE chose. Fais cette micro-action.",
+      TDAH: prefLength === 'long'
+        ? "Bloqué TDAH ? Besoin de nouveauté ! Transforme en défi : 'Si je fais ça, je m'offre X après'. Quelle micro-action peut débloquer la situation ?"
+        : "Bloqué ? Transforme en défi avec récompense. Micro-action maintenant !",
+      mixte: prefLength === 'long'
+        ? "Le blocage est un signal utile. Il dit 'trop compliqué' ou 'trop grand'. Solution : simplifie drastiquement. Quelle est la version la plus simple possible ?"
+        : "Blocage = signal. Simplifie drastiquement. Version ultra-simple ?"
+    };
+    return responses[profileType];
+  }
+
+  function generateFatigueResponse(profileType, prefLength) {
+    const responses = {
+      TSA: prefLength === 'long'
+        ? "Fatigue écrasante ? Ton cerveau TSA est saturé. Ce n'est pas de la paresse. Solution : repos PRODUCTIF. Assis 5 minutes les yeux fermés ou écoute 1 chanson."
+        : "Cerveau saturé. Repos 5 minutes productif. Écoute une chanson.",
+      TDAH: prefLength === 'long'
+        ? "Épuisé TDAH ? Batterie dopamine vide. Recharge rapide : musique préférée 3 minutes + snack énergétique. Puis 5 minutes de travail léger."
+        : "Batterie vide. Musique 3 min + snack. Recharge rapide !",
+      mixte: prefLength === 'long'
+        ? "La fatigue est un signal important. Ignorer = réservoir vide. Solution : pause stratégique 5 minutes, puis réévaluer l'énergie. Sois gentil avec toi-même."
+        : "Fatigue = signal. Pause 5 minutes stratégique. Sois indulgent."
+    };
+    return responses[profileType];
+  }
+
+  function generateWorkResponse(profileType, prefLength) {
+    const responses = {
+      TSA: prefLength === 'long'
+        ? "Au travail, priorise l'efficacité sur la perfection. Choisis UNE tâche, timer 10 minutes, pas de distractions. La perfection peut attendre."
+        : "Travail = efficacité avant perfection. 1 tâche, 10 minutes, focus.",
+      TDAH: prefLength === 'long'
+        ? "Travail TDAH ? Mode challenge ! Timer 15 minutes avec objectif précis, récompense immédiate après. Supprime toutes notifications. Let's go !"
+        : "Challenge travail : 15 minutes focus max, récompense après. C'est parti !",
+      mixte: prefLength === 'long'
+        ? "Au travail, sois stratégique. Quelle tâche a le plus grand impact pour le minimum d'effort ? Focus là-dessous 10-15 minutes."
+        : "Stratégique au travail : tâche à grand impact, 10-15 minutes focus."
+    };
+    return responses[profileType];
+  }
+
+  function generateHelpResponse(profileType, prefLength) {
+    const responses = {
+      TSA: prefLength === 'long'
+        ? "Je suis là pour t'aider. Dis-moi précisément ce que tu veux accomplir, et je t'aiderai à le décomposer en étapes très simples et claires."
+        : "Je t'aide. Dis-moi quoi faire, je le simplifie en micro-étapes.",
+      TDAH: prefLength === 'long'
+        ? "Besoin d'aide ! Super ! Dis-moi ce que tu veux faire et on va transformer ça en mission rapide et motivante. Let's go !"
+        : "Aide ! Dis-moi quoi faire, je le transforme en défi motivant.",
+      mixte: prefLength === 'long'
+        ? "Je suis là pour t'aider. Explique-moi ce que tu veux accomplir et je te proposerai une approche adaptée à ta situation."
+        : "Je t'aide. Explique ce que tu veux faire, je propose l'approche."
+    };
+    return responses[profileType];
+  }
+
+  function generateGeneralResponse(profileType, prefLength) {
+    const responses = {
+      TSA: prefLength === 'long'
+        ? "Je suis là pour t'aider. Dis-moi ce qui te préoccupe et je te proposerai une approche structurée et claire. Pas de surcharge, juste des étapes simples."
+        : "Je t'aide. Dis-moi ce qui t'empêche, je propose des étapes simples.",
+      TDAH: prefLength === 'long'
+        ? "Salut ! Dis-moi ce que tu veux faire et on va transformer ça en action rapide et motivante. Prêt à démarrer ?"
+        : "Salut ! Dis-moi quoi faire, je le transforme en action rapide.",
+      mixte: prefLength === 'long'
+        ? "Je suis ton assistant. Dis-moi ce dont tu as besoin et je t'aiderai à avancer à ton rythme, avec des solutions adaptées."
+        : "Je suis ton assistant. Dis-moi ce dont tu as besoin, je t'aide."
+    };
+    return responses[profileType];
+  }
+
   // Compose accessible responses (FALC-inspired: court, clair, étapes)
   if (!message || !message.trim()) {
     response = "Tu n'as rien envoyé. Écris ce que tu veux faire (ex: finir une tâche).";
@@ -1049,26 +1177,32 @@ app.post('/ask', async (req, res) => {
         : llmReply;
     } else {
       // Utiliser le moteur d'apprentissage local
-      const intelligentResponse = learningEngine.generateIntelligentResponse(message, profile, mode);
+      console.log('[DEBUG] Tentative génération réponse apprentissage...');
+      console.log('[DEBUG] Message:', message);
+      console.log('[DEBUG] Profile:', profile?.type_fonctionnement);
+      console.log('[DEBUG] Mode:', mode);
       
-      if (intelligentResponse && intelligentResponse.length > 20) {
-        // Réponse générée par l'apprentissage
-        response = (req.body && req.body.verbosity === 'short')
-          ? miniSummary(intelligentResponse)
-          : intelligentResponse;
+      try {
+        const intelligentResponse = learningEngine.generateIntelligentResponse(message, profile, mode);
+        console.log('[DEBUG] Réponse apprentissage générée:', intelligentResponse?.length, 'caractères');
+        console.log('[DEBUG] Contenu:', intelligentResponse?.substring(0, 100));
         
-        console.log('[LEARNING] Réponse générée par apprentissage local');
-      } else {
-        // Fallback sur heuristiques existantes
-        if (prefFormat === 'puces' || prefFormat === 'bullets' || prefFormat === 'list') {
-          response = (prefLength === 'long') ?
-            "Actions :\n- Identifie la première petite étape.\n- Fais une action pendant 5 minutes.\n- Reviens me dire si ça a aidé." :
-            "- Trouve la 1ère petite étape.\n- Fais 5 minutes maintenant.";
+        if (intelligentResponse && intelligentResponse.length > 10) {
+          // Réponse générée par l'apprentissage
+          response = (req.body && req.body.verbosity === 'short')
+            ? miniSummary(intelligentResponse)
+            : intelligentResponse;
+          
+          console.log('[LEARNING] Réponse générée par apprentissage local - SUCCESS');
         } else {
-          response = (prefLength === 'long') ?
-            "Commence par identifier la toute première petite étape, puis fais une action pendant 5 minutes. Ensuite dis‑moi si tu veux un plan détaillé." :
-            "Identifie la 1ère petite étape et fais 5 minutes maintenant.";
+          console.log('[LEARNING] Réponse apprentissage trop courte ou vide, fallback heuristiques');
+          // Fallback sur heuristiques existantes
+          response = generateEnhancedFallback(message, profile, mode, prefLength, prefFormat);
         }
+      } catch (error) {
+        console.error('[LEARNING] Erreur génération réponse:', error.message);
+        // Fallback sur heuristiques existantes
+        response = generateEnhancedFallback(message, profile, mode, prefLength, prefFormat);
       }
     }
   }
