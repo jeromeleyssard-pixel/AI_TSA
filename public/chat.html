@@ -429,7 +429,7 @@
 
         async function checkServerHealth() {
             try {
-                const response = await fetch('/health');
+                const response = await fetch('/api/health');
                 const health = await response.json();
                 
                 if (health.features.cloudLLM) {
@@ -452,7 +452,7 @@
 
         async function loadProfile() {
             try {
-                const response = await fetch('/profile');
+                const response = await fetch('/api/profile');
                 currentProfile = await response.json();
                 
                 if (currentProfile.type_fonctionnement) {
@@ -493,7 +493,7 @@
             };
 
             try {
-                const response = await fetch('/profile', {
+                const response = await fetch('/api/profile', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -535,7 +535,7 @@
             showTypingIndicator();
             
             try {
-                const response = await fetch('/chat', {
+                const response = await fetch('/api/chat', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -680,7 +680,7 @@
 
         async function sendFeedback(messageId, helpful) {
             try {
-                await fetch('/feedback', {
+                await fetch('/api/feedback', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

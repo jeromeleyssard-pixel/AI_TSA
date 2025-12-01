@@ -17,8 +17,17 @@ app.use(cors());
 app.use(bodyParser.json({ limit: '10mb' }));
 app.use(bodyParser.urlencoded({ extended: true, limit: '10mb' }));
 
-// Servir les fichiers statiques
-app.use(express.static(path.join(__dirname, '..', 'public')));
+// Configuration des données
+const DATA_DIR = path.join(__dirname, '..', 'data');
+
+function ensureDataDir() {
+  if (!fs.existsSync(DATA_DIR)) {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+  }
+}
+
+// Initialiser le gestionnaire de conversation
+const conversationManager = new ConversationManager();
 
 // Configuration du cloud LLM
 const CLOUD_ENABLED = process.env.ANTHROPIC_API_KEY || process.env.OPENAI_API_KEY;
@@ -34,23 +43,6 @@ if (CLOUD_ENABLED) {
   }
 }
 
-// Initialiser le gestionnaire de conversation
-const conversationManager = new ConversationManager();
-
-// Configuration des données
-const DATA_DIR = path.join(__dirname, '..', 'data');
-
-function ensureDataDir() {
-  if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
-  }
-}
-
-// Routes principales
-app.get('/', (req, res) => {
-  res.redirect('/chat.html');
-});
-
 // Route de santé pour Vercel
 app.get('/health', (req, res) => {
   res.json({
@@ -62,6 +54,20 @@ app.get('/health', (req, res) => {
       conversationManager: true,
       contextMemory: true,
       adaptiveResponses: true
+    }
+  });
+});
+
+// Route principale pour Vercel
+app.get('/', (req, res) => {
+  res.json({
+    message: 'TSA Assistant API v2.0.0',
+    status: 'running',
+    endpoints: {
+      health: '/health',
+      chat: '/chat',
+      profile: '/profile',
+      feedback: '/feedback'
     }
   });
 });
@@ -167,10 +173,6 @@ app.get('/onboarding/schema', (req, res) => {
     console.error('[SCHEMA] Error reading schema:', error);
     res.status(500).json({ error: 'Failed to read schema' });
   }
-});
-
-app.get('/onboarding', (req, res) => {
-  res.redirect('/onboarding.html');
 });
 
 // Système de conversation intelligent
@@ -442,12 +444,5 @@ setInterval(() => {
   conversationManager.cleanupOldConversations();
 }, 24 * 60 * 60 * 1000); // Nettoyer toutes les 24 heures
 
-// Démarrer le serveur
-app.listen(PORT, () => {
-  console.log(`🚀 TSA Assistant v2.0.0 running on port ${PORT}`);
-  console.log(`📊 Features: Cloud LLM=${!!cloudLLMService}, Conversation Manager=✅`);
-  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
-});
-
-// Export pour les tests
+// Export pour Vercel
 module.exports = app;
