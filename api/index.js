@@ -7,6 +7,10 @@ const bodyParser = require('body-parser');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Import du moteur d'apprentissage local
+const LocalLearningEngine = require('../src/learning_engine');
+const learningEngine = new LocalLearningEngine();
+
 // Configuration du cloud
 const CLOUD_ENABLED = process.env.ANTHROPIC_API_KEY || process.env.OPENAI_API_KEY;
 let cloudLLMService = null;
@@ -1038,20 +1042,33 @@ app.post('/ask', async (req, res) => {
       response = buildThreeStepPlan(message);
     }
   } else {
-    // standard: soit on utilise la réponse LLM, soit on retombe sur les heuristiques
+    // standard: soit on utilise la réponse LLM, soit on retombe sur les heuristiques avec apprentissage
     if (llmReply) {
       response = (req.body && req.body.verbosity === 'short')
         ? miniSummary(llmReply)
         : llmReply;
     } else {
-      if (prefFormat === 'puces' || prefFormat === 'bullets' || prefFormat === 'list') {
-        response = (prefLength === 'long') ?
-          "Actions :\n- Identifie la première petite étape.\n- Fais une action pendant 5 minutes.\n- Reviens me dire si ça a aidé." :
-          "- Trouve la 1ère petite étape.\n- Fais 5 minutes maintenant.";
+      // Utiliser le moteur d'apprentissage local
+      const intelligentResponse = learningEngine.generateIntelligentResponse(message, profile, mode);
+      
+      if (intelligentResponse && intelligentResponse.length > 20) {
+        // Réponse générée par l'apprentissage
+        response = (req.body && req.body.verbosity === 'short')
+          ? miniSummary(intelligentResponse)
+          : intelligentResponse;
+        
+        console.log('[LEARNING] Réponse générée par apprentissage local');
       } else {
-        response = (prefLength === 'long') ?
-          "Commence par identifier la toute première petite étape, puis fais une action pendant 5 minutes. Ensuite dis‑moi si tu veux un plan détaillé." :
-          "Identifie la 1ère petite étape et fais 5 minutes maintenant.";
+        // Fallback sur heuristiques existantes
+        if (prefFormat === 'puces' || prefFormat === 'bullets' || prefFormat === 'list') {
+          response = (prefLength === 'long') ?
+            "Actions :\n- Identifie la première petite étape.\n- Fais une action pendant 5 minutes.\n- Reviens me dire si ça a aidé." :
+            "- Trouve la 1ère petite étape.\n- Fais 5 minutes maintenant.";
+        } else {
+          response = (prefLength === 'long') ?
+            "Commence par identifier la toute première petite étape, puis fais une action pendant 5 minutes. Ensuite dis‑moi si tu veux un plan détaillé." :
+            "Identifie la 1ère petite étape et fais 5 minutes maintenant.";
+        }
       }
     }
   }
@@ -1169,10 +1186,21 @@ app.post('/ask', async (req, res) => {
 app.post('/feedback', (req, res) => {
   const { message, reply, helpful } = req.body || {};
   if (typeof helpful !== 'boolean') return res.status(400).json({ error: 'missing helpful boolean' });
+  
+  const profile = readProfile();
+  const mode = req.body.mode || 'standard';
+  
+  // Apprendre du feedback avec le moteur d'apprentissage
+  if (helpful) {
+    learningEngine.learnFromSuccess(message, reply, profile, mode, { helpful: true, timestamp: new Date().toISOString() });
+    console.log('[LEARNING] Appris d\'un feedback positif');
+  }
+  
   const fb = readFeedback();
   const entry = { id: Date.now(), ts: new Date().toISOString(), message: message || '', reply: reply || '', helpful };
   fb.items.push(entry);
   writeFeedback(fb);
+  
   // If helpful, add to examples store (avoid exact-duplicate replies)
   if (helpful) {
     try {
