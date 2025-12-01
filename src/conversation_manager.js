@@ -969,9 +969,22 @@ Qu'est-ce qui fonctionnerait le mieux pour toi maintenant : questions, actions c
     ];
     
     // Détecter le type de message pour une réponse plus pertinente
-    const messageLower = userMessage.toLowerCase();
+    const messageLower = userMessage.toLowerCase().trim();
     
-    if (messageLower.includes('salut') || messageLower.includes('bonjour') || messageLower.includes('hello')) {
+    // SALUTATIONS SIMPLES - Réponses plus chaleureuses et simples
+    if (messageLower === 'bonjour' || messageLower === 'salut' || messageLower === 'hello' || messageLower === 'hi' || messageLower === 'yo') {
+      const simpleGreetings = [
+        "Salut ! 😊 Comment tu vas aujourd'hui ?",
+        "Bonjour ! Je suis là pour toi. Qu'est-ce qui te passe par la tête ?",
+        "Hello ! Ravie de te voir. Comment puis-je t'aider ?",
+        "Coucou ! 😊 Dis-moi tout, je t'écoute.",
+        "Salut ! Content de te voir. Besoin d'aide pour quelque chose ?"
+      ];
+      return simpleGreetings[Math.floor(Math.random() * simpleGreetings.length)];
+    }
+    
+    // Salutations plus complexes
+    if (messageLower.includes('bonjour') || messageLower.includes('salut') || messageLower.includes('hello')) {
       const greetings = [
         "Bonjour ! Je suis ton assistant TSA/TDAH. Comment puis-je t'aider aujourd'hui ?",
         "Salut ! Ravie de te voir. Qu'est-ce qui te préoccupe en ce moment ?",
