@@ -184,8 +184,14 @@ app.post('/profile', (req, res) => {
 // Route POST profile avec préfixe /api pour compatibilité locale
 app.post('/api/profile', (req, res) => {
   try {
+    console.log('[PROFILE] Request received:', req.method, req.url);
+    console.log('[PROFILE] Request body:', JSON.stringify(req.body, null, 2));
+    
     ensureDataDir();
     const profilePath = path.join(DATA_DIR, 'profile.json');
+    
+    console.log('[PROFILE] Profile path:', profilePath);
+    console.log('[PROFILE] DATA_DIR:', DATA_DIR);
     
     // Validation avec schéma permissif
     const schema = {
@@ -219,24 +225,39 @@ app.post('/api/profile', (req, res) => {
       derniere_mise_a_jour: new Date().toISOString()
     };
     
+    console.log('[PROFILE] Processed profile:', JSON.stringify(profile, null, 2));
+    
     // S'assurer que le répertoire existe
     if (!fs.existsSync(DATA_DIR)) {
+      console.log('[PROFILE] Creating DATA_DIR...');
       fs.mkdirSync(DATA_DIR, { recursive: true });
     }
     
+    console.log('[PROFILE] Writing to file...');
     fs.writeFileSync(profilePath, JSON.stringify(profile, null, 2), 'utf8');
+    console.log('[PROFILE] File written successfully');
     
     // Mettre à jour le conversation manager
     const userId = req.ip || 'anonymous';
-    conversationManager.updateUserProfile(userId, profile);
+    console.log('[PROFILE] Updating conversation manager for user:', userId);
+    
+    try {
+      conversationManager.updateUserProfile(userId, profile);
+      console.log('[PROFILE] Conversation manager updated successfully');
+    } catch (cmError) {
+      console.error('[PROFILE] Error updating conversation manager:', cmError);
+      // Continue anyway - the file is saved
+    }
     
     console.log('[PROFILE] Profile saved successfully for user:', userId);
     res.json({ status: 'ok', profile });
   } catch (error) {
     console.error('[PROFILE] Error saving profile:', error);
+    console.error('[PROFILE] Stack trace:', error.stack);
     res.status(500).json({ 
       error: 'Failed to save profile', 
-      message: error.message 
+      message: error.message,
+      stack: error.stack
     });
   }
 });

@@ -926,6 +926,27 @@ Qu'est-ce qui fonctionnerait le mieux pour toi maintenant : questions, actions c
   }
 
   getGeneralApproach(profile, analysis) {
+    // Détecter les salutations simples pour une approche plus naturelle
+    const messageLower = analysis.message?.toLowerCase().trim() || '';
+    
+    if (messageLower === 'bonjour' || messageLower === 'salut' || messageLower === 'hello' || messageLower === 'hi' || messageLower === 'yo') {
+      return {
+        style: 'friendly_greeting',
+        tone: 'warm_welcoming',
+        format: 'natural',
+        elements: ['greeting']
+      };
+    }
+    
+    if (messageLower.includes('bonjour') || messageLower.includes('salut') || messageLower.includes('hello')) {
+      return {
+        style: 'conversational_greeting',
+        tone: 'friendly_supportive',
+        format: 'natural',
+        elements: ['greeting']
+      };
+    }
+    
     // Approche adaptative selon le contexte
     if (analysis.emotionalTone === 'anxious') {
       return this.getAnxietyApproach(profile);
@@ -1153,6 +1174,7 @@ class ResponseBuilder {
 
   buildElement(element, approach) {
     const elementBuilders = {
+      greeting: () => this.buildGreeting(),
       clarification: () => this.buildClarification(),
       breakdown: () => this.buildBreakdown(),
       simple_steps: () => this.buildSimpleSteps(),
@@ -1199,6 +1221,18 @@ class ResponseBuilder {
   }
 
   // Implémentations des éléments de réponse
+  buildGreeting() {
+    return this.getVariation('greeting', [
+      "Salut ! 😊 Comment tu vas aujourd'hui ?",
+      "Bonjour ! Je suis là pour toi. Qu'est-ce qui te passe par la tête ?",
+      "Hello ! Ravie de te voir. Comment puis-je t'aider ?",
+      "Coucou ! 😊 Dis-moi tout, je t'écoute.",
+      "Salut ! Content de te voir. Besoin d'aide pour quelque chose ?",
+      "Hey ! 😊 Bienvenue ! Comment ça va en ce moment ?",
+      "Bonjour ! Heureux de te voir. Qu'est-ce qui t'amène aujourd'hui ?"
+    ]);
+  }
+
   buildClarification() {
     return this.getVariation('clarification', [
       "Je veux bien t'aider. Pour te donner la meilleure réponse, dis-moi précisément ce que tu veux accomplir.",
