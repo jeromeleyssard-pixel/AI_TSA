@@ -562,6 +562,379 @@ app.post('/ask', async (req, res) => {
     return /^(bonjour|salut|coucou|hey|hi|hello)([\s\!\.]|$)/i.test(t) && t.length < 30;
   }
 
+  // Fonction pour construire les réponses de micro-tâches
+  function buildMicroTaskResponse(task, profile) {
+    const taskLower = task.toLowerCase();
+    const profileType = (profile && profile.type_fonctionnement) || 'mixte';
+    const sensitivite = (profile && profile.sensibilite_stimulations) || 'normale';
+    
+    // Détecter le type de tâche
+    let taskType = 'general';
+    let timeEstimate = 5;
+    
+    if (/(email|mail|message|répondre|écrire)/.test(taskLower)) {
+      taskType = 'communication';
+      timeEstimate = 3;
+    } else if (/(ranger|nettoyer|organiser|trier|faire le ménage)/.test(taskLower)) {
+      taskType = 'organisation';
+      timeEstimate = 10;
+    } else if (/(appeler|téléphoner|contacter)/.test(taskLower)) {
+      taskType = 'communication';
+      timeEstimate = 5;
+    } else if (/(travailler|étudier|réviser|lire|apprendre)/.test(taskLower)) {
+      taskType = 'travail';
+      timeEstimate = 15;
+    } else if (/(acheter|course|magasin)/.test(taskLower)) {
+      taskType = 'errand';
+      timeEstimate = 20;
+    }
+
+    const responses = {
+      communication: {
+        TSA: [
+          `Parfait pour commencer ! Micro-tâche : ${task}`,
+          "Étape 1 : Ouvre juste l'application/email (2 minutes)",
+          "Étape 2 : Écris 1-2 phrases simples et courtes",
+          "Étape 3 : Relis et envoie (pas besoin de perfection)",
+          "Timer : 5 minutes maximum. Lance maintenant ?"
+        ],
+        TDAH: [
+          `Excellent choix ! On va faire ${task} en mode focus`,
+          "Étape 1 : Prépare ton téléphone/ordinateur (1 minute)",
+          "Étape 2 : Mets un timer 5 minutes et envoie le message",
+          "Étape 3 : Coche "fait" et passe à autre chose",
+          "Pas de perfection, juste l'action. C'est parti ?"
+        ],
+        mixte: [
+          `Super ! Micro-tâche : ${task}`,
+          "1) Prépare ce qu'il faut (1 minute)",
+          "2) Timer 5 minutes et fais l'essentiel",
+          "3) Envoie/valide sans trop réfléchir",
+          "Simple et direct. Tu commences maintenant ?"
+        ]
+      },
+      organisation: {
+        TSA: [
+          `Ok, on organise : ${task}`,
+          "Étape 1 : Choisis UNE seule zone (ex: bureau, évier)",
+          "Étape 2 : Timer 5 minutes : range juste ce qui traîne",
+          "Étape 3 : Arrête quand le timer sonne (même si pas fini)",
+          "Petit pas = pas de surcharge. Essaie maintenant ?"
+        ],
+        TDAH: [
+          `Action rangement : ${task}`,
+          "1) Mets une musique motivante (30 secondes)",
+          "2) Timer 10 minutes : range le plus vite possible",
+          "3) Photo avant/après pour voir le progrès",
+          "Mode speed, pas de détails. Lance le timer !"
+        ],
+        mixte: [
+          `Parfait, on organise : ${task}`,
+          "1) Choisis une micro-zone (1m² maximum)",
+          "2) Timer 5-10 minutes selon ton énergie",
+          "3) Arrête et admire le petit progrès",
+          "Tu choisis combien de minutes ? 5 ou 10 ?"
+        ]
+      },
+      travail: {
+        TSA: [
+          `Super, on travaille sur : ${task}`,
+          "Étape 1 : Prépare ton espace calme (2 minutes)",
+          "Étape 2 : Timer 10 minutes sur UNE seule chose",
+          "Étape 3 : Pause obligatoire après le timer",
+          "Focus court et efficace. Prêt à commencer ?"
+        ],
+        TDAH: [
+          `Let's go ! Travail : ${task}`,
+          "1) Supprime les distractions (notifications)",
+          "2) Timer 15 minutes avec objectif précis",
+          "3) Récompense immédiate après (musique, snack)",
+          "Mode challenge personnel. Tu lances le timer ?"
+        ],
+        mixte: [
+          `Ok, concentration sur : ${task}`,
+          "1) Environnement prêt (1 minute)",
+          "2) Timer 10-15 minutes selon la tâche",
+          "3) Note ce que tu as accompli",
+          "Tu préfères 10 ou 15 minutes de focus ?"
+        ]
+      },
+      errand: {
+        TSA: [
+          `Bonne idée ! Course : ${task}`,
+          "Étape 1 : Liste de 2-3 items maximum (pas plus)",
+          "Étape 2 : Prépare sac/porte-monnaie (2 minutes)",
+          "Étape 3 : Timer 20 minutes pour faire vite",
+          "Mission ultra-simple. Tu pars maintenant ?"
+        ],
+        TDAH: [
+          `Action course : ${task}`,
+          "1) Playlist motivante prête (30 secondes)",
+          "2) Liste sur téléphone avec photos si besoin",
+          "3) Chronomètre pour ne pas traîner",
+          "Mode speed shopping. C'est parti ?"
+        ],
+        mixte: [
+          `Parfait, on fait les courses : ${task}`,
+          "1) Liste courte et précise (1 minute)",
+          "2) Prépare le nécessaire (sac, moyens)",
+          "3) Objectif : aller-retour efficace",
+          "Tu as ta liste ? On y va ?"
+        ]
+      },
+      general: {
+        TSA: [
+          `Parfait ! Micro-tâche : ${task}`,
+          "Étape 1 : Prépare ce qu'il faut (1 minute)",
+          "Étape 2 : Timer 5 minutes, action simple",
+          "Étape 3 : Arrête même si pas parfait",
+          "Simple et sans pression. Essaie maintenant ?"
+        ],
+        TDAH: [
+          `Let's go ! Action : ${task}`,
+          "1) Lance ta musique préférée (30 sec)",
+          "2) Timer 5-10 minutes, focus maximum",
+          "3) Célébration micro-victoire après",
+          "Mode action pure. Tu lances le timer ?"
+        ],
+        mixte: [
+          `Super ! Micro-tâche : ${task}`,
+          "1) Préparation rapide (1 minute)",
+          "2) Timer 5 minutes, action concentrée", 
+          "3) Validation du progrès fait",
+          "Équilibre parfait. Tu commences maintenant ?"
+        ]
+      }
+    };
+
+    return responses[taskType][profileType].join('\n');
+  }
+
+  // Fonction pour détecter le type de blocage
+  function detectBlockageType(message) {
+    const msg = message.toLowerCase();
+    
+    if (/(procrastiner|difficile de commencer|pas envie|manque de motivation|paresse)/.test(msg)) {
+      return 'procrastination';
+    } else if (/(trop compliqué|comprends pas|confus|perdu|sais pas comment)/.test(msg)) {
+      return 'comprehension';
+    } else if (/(trop grand|trop gros|énorme|impossible|débordant|écrasant)/.test(msg)) {
+      return 'overwhelm';
+    } else if (/(peur|anxieux|stressé|inquiet|panique)/.test(msg)) {
+      return 'anxiety';
+    } else if (/(fatigué|épuisé|pas l'énergie|plus de force|vide)/.test(msg)) {
+      return 'fatigue';
+    } else if (/(distraction|concentre pas|pense à autre chose|perd le fil)/.test(msg)) {
+      return 'distraction';
+    } else if (/(perfectionniste|parfait|doit être parfait|peur de mal faire)/.test(msg)) {
+      return 'perfectionism';
+    } else {
+      return 'general';
+    }
+  }
+
+  // Fonction pour construire les réponses de blocage
+  function buildBlockageResponse(blockageType, message, profile) {
+    const profileType = (profile && profile.type_fonctionnement) || 'mixte';
+    const besoinValidation = (profile && profile.besoin_validation === 'oui');
+    
+    const responses = {
+      procrastination: {
+        TSA: [
+          "C'est normal de procrastiner, surtout TSA.",
+          "Le problème n'est pas toi, c'est la tâche qui semble trop grande.",
+          "Solution : réduit-la à l'absurde (30 secondes).",
+          "Exemple : 'Ouvre le document' = 'Ouvre l'application' (2 secondes).",
+          "Laquelle de tes tâches tu peux réduire à 30 secondes ?"
+        ],
+        TDAH: [
+          "Procrastination TDAH ? C'est le manque de dopamine qui parle.",
+          "Ton cerveau cherche de l'urgence et de la nouveauté.",
+          "Solution : crée de l'urgence artificielle (timer, musique, défi).",
+          "Exemple : 'Fais 1 minute à fond' puis '5 minutes pause'.",
+          "Quelle tâche tu veux transformer en mini-jeu ?"
+        ],
+        mixte: [
+          "La procrastination est normale, pas un échec personnel.",
+          "Ton cerveau essaie de te protéger d'une surcharge.",
+          "Solution : micro-action + récompense immédiate.",
+          "Exemple : '1 minute de travail' + 'musique préférée après'.",
+          "Quelle micro-action tu peux faire maintenant ?"
+        ]
+      },
+      comprehension: {
+        TSA: [
+          "Si tu ne comprends pas, ce n'est pas ta faute.",
+          "Le problème vient souvent des instructions pas assez claires.",
+          "Solution : décompose en questions plus simples.",
+          "Exemple : 'Que dois-je faire d'abord ?' puis 'Comment ?'.",
+          "Quelle partie tu ne comprends pas exactement ?"
+        ],
+        TDAH: [
+          "Difficulté à comprendre ? Ton cerveau veut l'essentiel direct.",
+          "Trop de détails = surcharge cognitive TDAH.",
+          "Solution : cherche le 'pourquoi' et le 'comment' en 1 phrase.",
+          "Exemple : 'Pourquoi je fais ça ?' → 'Pour obtenir X'.",
+          "Quel est le but final simple de ce que tu dois faire ?"
+        ],
+        mixte: [
+          "Quand on ne comprend pas, c'est souvent trop abstrait.",
+          "Ton cerveau a besoin de concret et de visuel.",
+          "Solution : transforme en image ou exemple concret.",
+          "Exemple : 'Faire un rapport' → 'Raconter ce que j'ai fait'.",
+          "Comment tu peux expliquer ça simplement comme à un enfant ?"
+        ]
+      },
+      overwhelm: {
+        TSA: [
+          "Trop grand ? Ton cerveau TSA voit tous les détails en même temps.",
+          "C'est comme voir une forêt au lieu d'un arbre.",
+          "Solution : cache tout sauf UNE seule chose.",
+          "Exemple : couvre tout avec une feuille, découpe un petit trou.",
+          "Quel est le SEUL petit morceau que tu peux voir maintenant ?"
+        ],
+        TDAH: [
+          "Trop écrasant ? Ton cerveau TDAH voit tout en même temps sans filtre.",
+          "C'est comme 100 onglets ouverts simultanément.",
+          "Solution : choisis-en UN et ferme les autres mentalement.",
+          "Exemple : 'Aujourd'hui = seulement cette tâche, le reste n'existe pas'.",
+          "Quelle tâche tu choisis de voir et laquelle tu mets 'en pause' ?"
+        ],
+        mixte: [
+          "La sensation d'être débordé est épuisante mais normale.",
+          "Ton cerveau essaie de tout gérer d'un coup.",
+          "Solution : sépare ce que tu contrôles et ce que tu ne contrôles pas.",
+          "Exemple : 'Je contrôle : faire 1 appel. Je ne contrôle pas : la réponse'.",
+          "Quelle est la seule chose que tu peux contrôler maintenant ?"
+        ]
+      },
+      anxiety: {
+        TSA: [
+          "L'anxiété paralyse, surtout quand on est TSA.",
+          "Ton cerveau anticipe tous les scénarios négatifs.",
+          "Solution : reviens au présent, 5 minutes maximum.",
+          "Exemple : 'Respire + 1 action simple' puis 'reprends plus tard'.",
+          "Quelle action simple tu peux faire malgré l'anxiété ?"
+        ],
+        TDAH: [
+          "Anxiété TDAH ? C'est souvent l'hyperfocus sur les risques.",
+          "Ton cerveau tourne en boucle sur 'et si...'",
+          "Solution : action rapide pour couper la boucle mentale.",
+          "Exemple : 'Lève-toi, marche 30 secondes, reviens'.",
+          "Quel petit mouvement physique tu peux faire maintenant ?"
+        ],
+        mixte: [
+          "L'anxiété nous fait imaginer le pire scénario.",
+          "Mais 90% de nos peurs ne se réalisent jamais.",
+          "Solution : action microscopique pour prouver que c'est possible.",
+          "Exemple : 'Ouvre juste le document' (pas besoin de travailler).",
+          "Quelle action de 10 secondes tu peux faire pour tester ?"
+        ]
+      },
+      fatigue: {
+        TSA: [
+          "Fatigue écrasante ? Ton cerveau TSA est saturé.",
+          "Ce n'est pas de la paresse, c'est une surcharge réelle.",
+          "Solution : repos PRODUCTIF (pas juste zéro).",
+          "Exemple : 'Assis 5 minutes les yeux fermés' ou 'Écoute 1 chanson'.",
+          "Quel type de micro-repos tu peux t'accorder maintenant ?"
+        ],
+        TDAH: [
+          "Épuisé TDAH ? Ton cerveau a manqué de dopamine aujourd'hui.",
+          "La batterie est vide, pas de jugement.",
+          "Solution : recharge rapide avec stimulation agréable.",
+          "Exemple : 'Musique préférée 3 minutes' ou 'Snack énergétique'.",
+          "Quelle petite recharge rapide tu peux faire maintenant ?"
+        ],
+        mixte: [
+          "La fatigue est un signal que ton corps envoie.",
+          "L'ignorer, c'est comme rouler avec le réservoir vide.",
+          "Solution : pause stratégique, pas abandon.",
+          "Exemple : '5 minutes pause' puis 'réévalue l'énergie'.",
+          "Tu peux prendre 5 minutes pour recharger ?"
+        ]
+      },
+      distraction: {
+        TSA: [
+          "Distractions constantes ? Ton cerveau TSA capte tout.",
+          "Chaque stimulus est une invitation à dévier.",
+          "Solution : crée une 'bulle anti-distraction'.",
+          "Exemple : 'Casque + 1 seule fenêtre ouverte + timer 5 minutes'.",
+          "Quelle distraction tu peux éliminer maintenant ?"
+        ],
+        TDAH: [
+          "Distractions TDAH ? Ton cerveau cherche la nouveauté.",
+          "C'est comme avoir un radar intégré pour tout ce qui brille.",
+          "Solution : donne-lui la nouveauté DANS la tâche.",
+          "Exemple : 'Change de méthode toutes les 10 minutes' ou 'Musique différente'.",
+          "Comment tu peux rendre ta tâche plus 'nouvelle' ?"
+        ],
+        mixte: [
+          "Les distractions sont normales, ton cerveau est curieux.",
+          "Le problème n'est pas les distractions, c'est la gestion.",
+          "Solution : autorise DES distractions contrôlées.",
+          "Exemple : '25 minutes travail' + '5 minutes libre totale'.",
+          "Tu préfères travailler 25 min puis 5 min libre ?"
+        ]
+      },
+      perfectionism: {
+        TSA: [
+          "Perfectionnisme ? Ton cerveau TSA veut le contrôle absolu.",
+          "Mais la perfection = paralysie complète.",
+          "Solution : autorise le 'suffisamment bien' (80% suffisant).",
+          "Exemple : 'Fais 80% du travail = déjà excellent'.",
+          "Quel est le minimum acceptable que tu peux accepter ?"
+        ],
+        TDAH: [
+          "Perfectionniste TDAH ? Ton cerveau veut éviter la critique.",
+          "Mais chaque tentative de perfection = procrastination.",
+          "Solution : 'brouillon puis amélioration' (jamais parfait du premier coup).",
+          "Exemple : 'Version rapide' puis 'version améliorée' plus tard.",
+          "Tu peux faire une version 'brouillon' maintenant ?"
+        ],
+        mixte: [
+          "Le perfectionnisme est une peur de ne pas être à la hauteur.",
+          "Mais 'fait' est toujours mieux que 'parfait mais pas fait'.",
+          "Solution : sépare 'faire' et 'améliorer'.",
+          "Exemple : 'Fais la version simple maintenant, améliore plus tard'.",
+          "Tu peux faire une version simple maintenant ?"
+        ]
+      },
+      general: {
+        TSA: [
+          "Tu es bloqué, c'est normal et temporaire.",
+          "Ton cerveau TSA a besoin de clarté et de structure.",
+          "Solution : réduis à 1 seule action concrète.",
+          "Exemple : 'Quelle est LA SEULE chose que je peux faire maintenant ?'",
+          "Quelle est cette seule action ?"
+        ],
+        TDAH: [
+          "Bloqué ? Ton cerveau TDAH a besoin d'urgence et de nouveauté.",
+          "La routine = ennui = blocage.",
+          "Solution : transforme en défi ou jeu.",
+          "Exemple : 'Si je fais ça, je m'offre X après'.",
+          "Quel petit défi tu peux te lancer maintenant ?"
+        ],
+        mixte: [
+          "Le blocage est un signal, pas un échec.",
+          "Ton cerveau te dit quelque chose d'important.",
+          "Solution : écoute le signal et adapte.",
+          "Exemple : 'Trop dur ?' → 'Plus simple'. 'Trop long ?' → 'Plus court'.",
+          "Quel est le message que ton blocage t'envoie ?"
+        ]
+      }
+    };
+
+    let response = responses[blockageType][profileType].join('\n');
+    
+    // Ajout de validation si besoin
+    if (besoinValidation) {
+      response += '\n\nRappelle-toi : être bloqué ne veut pas dire que tu es nul. C\'est juste que ton cerveau a besoin d\'un ajustement. Tu fais de ton mieux avec ce que tu as.';
+    }
+    
+    return response;
+  }
+
   // Safe profile summary to avoid injecting unexpected strings
   function profileSummaryText(p) {
     if (!p) return '';
@@ -598,9 +971,11 @@ app.post('/ask', async (req, res) => {
     if (t === '1') {
       response = "On commence par une seule micro‑tâche. Dis en une phrase ce que tu veux faire en premier.";
     } else if (t === '2') {
-      response = "OK pour un petit plan. Écris ton objectif en une phrase, je t’aiderai à le découper.";
+      response = "OK pour un petit plan. Écris ton objectif en une phrase, je t'aiderai à le découper.";
+    } else if (t === '3') {
+      response = "Parlons de ce qui te bloque. Explique en une phrase ce qui t'empêche d'avancer, je t'aiderai à trouver une solution.";
     } else {
-      response = "Explique en une phrase ce qui te bloque le plus en ce moment, je t’aiderai à trouver une 1ère petite étape.";
+      response = "Choisis 1 (micro-tâche), 2 (petit plan) ou 3 (blocage).";
     }
   } else if (
     mode === 'surcharge' ||
