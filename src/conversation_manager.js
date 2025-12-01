@@ -386,7 +386,10 @@ class ConversationManager {
     try {
       const intent = analysis.intent;
       const emotionalTone = analysis.emotionalTone;
-      const context = conversation.context;
+      const context = {
+        ...conversation.context,
+        sessionId: conversation.id // Ajouter le sessionId manquant
+      };
       
       // Logique de raisonnement basée sur le contexte et l'historique
       switch (intent) {
@@ -560,9 +563,21 @@ Qu'est-ce qui fonctionnerait le mieux pour toi maintenant : questions, actions c
 
   // Fonctions utilitaires pour le raisonnement
   getRecentEmotionalPattern(context, emotion) {
-    const recentMessages = context.recentMessages || [];
+    // Utiliser les vraies données de conversation au lieu de context.recentMessages
+    const conversation = this.conversations.get(context.sessionId);
+    if (!conversation || !conversation.messages) {
+      return 0;
+    }
+    
+    // Analyser les 10 derniers messages
+    const recentMessages = conversation.messages.slice(-10);
     return recentMessages.filter(msg => 
-      msg.analysis && msg.analysis.emotionalTone === emotion
+      msg.isUser === false && // Seulement les réponses de l'assistant
+      msg.content && 
+      msg.content.toLowerCase().includes('anxi') || // Contient des mots liés à l'anxiété
+      msg.content.toLowerCase().includes('stress') ||
+      msg.content.toLowerCase().includes('peur') ||
+      msg.content.toLowerCase().includes('inqui')
     ).length;
   }
 
@@ -594,9 +609,21 @@ Qu'est-ce qui fonctionnerait le mieux pour toi maintenant : questions, actions c
   }
 
   getBlockageHistory(context) {
-    const recentMessages = context.recentMessages || [];
+    // Utiliser les vraies données de conversation
+    const conversation = this.conversations.get(context.sessionId);
+    if (!conversation || !conversation.messages) {
+      return [];
+    }
+    
+    // Analyser les messages récents pour les blocages
+    const recentMessages = conversation.messages.slice(-10);
     return recentMessages.filter(msg => 
-      msg.analysis && msg.analysis.intent === 'blockage'
+      msg.isUser === true && // Messages de l'utilisateur
+      msg.content && 
+      (msg.content.toLowerCase().includes('bloque') ||
+       msg.content.toLowerCase().includes('bloqu') ||
+       msg.content.toLowerCase().includes('difficile') ||
+       msg.content.toLowerCase().includes('peux pas'))
     ).map(msg => ({
       trigger: msg.content.substring(0, 50) + '...',
       result: 'Blocage identifié'
@@ -615,14 +642,20 @@ Qu'est-ce qui fonctionnerait le mieux pour toi maintenant : questions, actions c
   }
 
   estimateEnergyLevel(context) {
-    const recentMessages = context.recentMessages || [];
+    // Utiliser les vraies données de conversation
+    const conversation = this.conversations.get(context.sessionId);
+    if (!conversation || !conversation.messages) {
+      return 'medium';
+    }
+    
+    const recentMessages = conversation.messages.slice(-5);
+    const messageTexts = recentMessages.filter(msg => msg.isUser && msg.content).map(msg => msg.content.toLowerCase()).join(' ');
+    
     const energyIndicators = {
       high: ['motivé', 'enthousiaste', 'prêt', 'énergie'],
-      low: ['fatigué', 'épuisé', 'las', 'difficile', 'lourd'],
+      low: ['fatigué', 'épuisé', 'las', 'difficile', 'lourd', 'fleum'],
       medium: ['je peux', 'je vais', 'possible']
     };
-    
-    const messageTexts = recentMessages.map(msg => msg.content.toLowerCase()).join(' ');
     
     for (const [level, indicators] of Object.entries(energyIndicators)) {
       if (indicators.some(indicator => messageTexts.includes(indicator))) {
@@ -645,9 +678,17 @@ Qu'est-ce qui fonctionnerait le mieux pour toi maintenant : questions, actions c
   }
 
   getHelpHistory(context) {
-    const recentMessages = context.recentMessages || [];
-    return recentMessages.filter(msg => 
-      msg.analysis && msg.analysis.intent === 'help_request'
+    // Utiliser les vraies données de conversation
+    const conversation = this.conversations.get(context.sessionId);
+    if (!conversation || !conversation.messages) {
+      return [];
+    }
+    
+    return conversation.messages.filter(msg => 
+      msg.isUser === true && msg.content &&
+      (msg.content.toLowerCase().includes('aide') ||
+       msg.content.toLowerCase().includes('aide-moi') ||
+       msg.content.toLowerCase().includes('help'))
     );
   }
 
@@ -657,10 +698,15 @@ Qu'est-ce qui fonctionnerait le mieux pour toi maintenant : questions, actions c
   }
 
   assessRoutineStability(context) {
-    const recentMessages = context.recentMessages || [];
+    // Utiliser les vraies données de conversation
+    const conversation = this.conversations.get(context.sessionId);
+    if (!conversation || !conversation.messages) {
+      return 'unknown';
+    }
+    
+    const messageTexts = conversation.messages.filter(msg => msg.content).map(msg => msg.content.toLowerCase()).join(' ');
     const routineKeywords = ['routine', 'habitude', 'toujours', 'chaque jour', 'matin', 'soir'];
     
-    const messageTexts = recentMessages.map(msg => msg.content.toLowerCase()).join(' ');
     const routineMentions = routineKeywords.filter(keyword => messageTexts.includes(keyword));
     
     if (routineMentions.length > 0) {
@@ -671,11 +717,17 @@ Qu'est-ce qui fonctionnerait le mieux pour toi maintenant : questions, actions c
   }
 
   calculateEngagement(context) {
-    const recentMessages = context.recentMessages || [];
-    if (recentMessages.length === 0) return 'medium';
+    // Utiliser les vraies données de conversation
+    const conversation = this.conversations.get(context.sessionId);
+    if (!conversation || !conversation.messages) {
+      return 'medium';
+    }
     
-    // Calculer la longueur moyenne des messages
-    const avgLength = recentMessages.reduce((sum, msg) => sum + msg.content.length, 0) / recentMessages.length;
+    const userMessages = conversation.messages.filter(msg => msg.isUser && msg.content);
+    if (userMessages.length === 0) return 'medium';
+    
+    // Calculer la longueur moyenne des messages utilisateur
+    const avgLength = userMessages.reduce((sum, msg) => sum + msg.content.length, 0) / userMessages.length;
     
     if (avgLength < 20) return 'low';
     if (avgLength > 100) return 'high';
@@ -906,22 +958,43 @@ Qu'est-ce qui fonctionnerait le mieux pour toi maintenant : questions, actions c
     return responseBuilder.build();
   }
 
-  generateDefaultResponse(message) {
-    const analysis = this.analyzeUserMessage(message);
+  generateDefaultResponse(userMessage) {
+    // Réponses par défaut améliorées avec variations
+    const defaultResponses = [
+      "Je suis là pour t'aider ! Dis-moi ce qui te préoccupe et on va trouver une solution ensemble.",
+      "Je t'écoute. Quelle est la chose la plus importante que tu aimerais aborder maintenant ?",
+      "Absolument ! Je suis ton assistant TSA/TDAH. Comment puis-je t'être utile en ce moment ?",
+      "Bonjour ! Je suis là pour toi. Parle-moi de ta situation et je t'aiderai pas à pas.",
+      "Je suis prêt à t'aider ! Décris-moi ce que tu vis et on trouvera la meilleure approche pour toi."
+    ];
     
-    if (analysis.intent === 'help_request') {
-      return "Je suis là pour t'aider. Dis-moi précisément ce dont tu as besoin et je t'accompagnerai pas à pas.";
-    } else if (analysis.intent === 'anxiety') {
-      return "Je sens que tu es anxieux. Respire profondément avec moi : 4 secondes inspire, 4 bloque, 4 souffle. Je suis là avec toi.";
-    } else if (analysis.intent === 'blockage') {
-      return "Tu es bloqué, c'est normal. Quelle est la plus petite action possible pour commencer ?";
-    } else {
-      return "Je suis là pour t'écouter. Dis-moi ce qui te préoccupe et on trouvera une solution ensemble.";
+    // Détecter le type de message pour une réponse plus pertinente
+    const messageLower = userMessage.toLowerCase();
+    
+    if (messageLower.includes('salut') || messageLower.includes('bonjour') || messageLower.includes('hello')) {
+      const greetings = [
+        "Bonjour ! Je suis ton assistant TSA/TDAH. Comment puis-je t'aider aujourd'hui ?",
+        "Salut ! Ravie de te voir. Qu'est-ce qui te préoccupe en ce moment ?",
+        "Hello ! Je suis là pour toi. Dis-moi tout ce qu'il y a à faire !"
+      ];
+      return greetings[Math.floor(Math.random() * greetings.length)];
     }
+    
+    if (messageLower.includes('aide') || messageLower.includes('help')) {
+      return "Bien sûr que je vais t'aider ! Dis-moi précisément ce dont tu as besoin et je te guiderai pas à pas.";
+    }
+    
+    if (messageLower.includes('stress') || messageLower.includes('anx') || messageLower.includes('peur')) {
+      return "Je vois que tu ressens de l'anxiété. Respirons ensemble un instant, puis trouve la solution la plus simple pour commencer.";
+    }
+    
+    // Réponse par défaut générique
+    return defaultResponses[Math.floor(Math.random() * defaultResponses.length)];
   }
 
   // Apprendre du feedback
   learnFromFeedback(sessionId, messageId, feedback) {
+    // ...
     const conversation = this.conversations.get(sessionId);
     if (!conversation) return;
 
